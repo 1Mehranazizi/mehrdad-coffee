@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+@theme inline {
+  /* Brand palette — drawn from the Mehrdad Coffee packaging:
+     kraft-paper cream, deep roasted ink, coffee brown, muted brass accent. */
+  --color-paper: #f4efe4;
+  --color-paper-deep: #ece4d3;
+  --color-ink: #201c17;
+  --color-ink-soft: #55503f;
+  --color-coffee: #6b4226;
+  --color-coffee-deep: #4a2c18;
+  --color-brass: #b3853f;
+  --color-line: #d9cfba;
+  --color-cream: #fbf8f1;
+
+  --font-sans: var(--font-vazirmatn);
+
+  --animate-marquee: marquee 32s linear infinite;
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0%);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
+
+::selection {
+  background: var(--color-coffee);
+  color: var(--color-cream);
+}
+
+/* visible keyboard focus */
+:focus-visible {
+  outline: 2px solid var(--color-coffee);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
