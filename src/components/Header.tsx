@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Menu, Search, ShoppingBag, X } from "lucide-react";
+import Image from "next/image";
 
 const NAV_LINKS = [
   { href: "/shop", label: "فروشگاه" },
@@ -19,7 +20,7 @@ export default function Header() {
       {/* announcement strip */}
       <div className="bg-ink text-cream text-xs sm:text-sm">
         <p className="mx-auto max-w-6xl px-4 py-2 text-center">
-          ارسال به سراسر ایران · برای خریدهای بالای ۵۰۰ هزار تومان، ارسال رایگان
+          ارسال به سراسر ایران · ارسال رایگان و همان روز در کرمانشاه
         </p>
       </div>
 
@@ -27,12 +28,15 @@ export default function Header() {
         <div className="flex h-18 items-center justify-between py-3">
           {/* logo — first in DOM, sits on the right in RTL */}
           <Link href="/" className="flex items-baseline gap-2 shrink-0">
-            <span className="text-2xl font-extrabold tracking-tight text-ink">
-              مهرداد
-            </span>
-            <span className="hidden sm:inline text-[11px] tracking-[0.2em] text-ink-soft">
-              MEHRDAD COFFEE
-            </span>
+          
+            <Image
+  src="/images/logo.png"
+  width={300}
+  height={100}
+  quality={100}
+  alt="Mehrdad Coffee"
+  className="w-30 h-auto"
+/>
           </Link>
 
           {/* nav */}

@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
-import { SunburstMark, Sparkle } from "@/components/icons";
+import { Sparkle } from "@/components/icons";
+import HeroArt from "@/components/home/HeroArt";
 
 export default function Hero() {
   return (
@@ -34,9 +34,7 @@ export default function Hero() {
           </h1>
 
           <p className="mt-6 max-w-md mx-auto md:mx-0 text-ink-soft leading-8">
-            دانه‌های ممتاز عربیکا را انتخاب می‌کنیم، در اصفهان تازه برشته
-            می‌کنیم و همان روز برایتان ارسال می‌کنیم؛ برای اسپرسو، فیلتر یا
-            قهوه‌ی ترک، به سلیقه‌ی خودتان.
+           از انتخاب دقیق دانه‌ها تا برشته‌کاری تازه، همه‌چیز را با وسواس انجام می‌دهیم تا قهوه‌ای تازه و خوش‌عطر به دستتان برسد؛ برای هر روشی که دوست دارید، با طعمی که به سلیقه‌ی شما نزدیک است.
           </p>
 
           <div className="mt-9 flex flex-col sm:flex-row items-center justify-center md:justify-start gap-3">
@@ -55,21 +53,11 @@ export default function Hero() {
           </div>
         </div>
 
-        {/* product visual — left side in RTL */}
+        {/* brand emblem — left side in RTL */}
         <div className="relative mx-auto w-full max-w-sm md:max-w-md">
-          <div className="absolute -inset-6 rounded-[2.5rem] bg-paper-deep -z-10" />
-          <div className="overflow-hidden rounded-[2rem] border border-line shadow-[0_30px_60px_-25px_rgba(32,28,23,0.35)]">
-            <Image
-              src="/images/package-front.png"
-              alt="بسته‌بندی قهوه مهرداد"
-              width={800}
-              height={1200}
-              priority
-              className="h-auto w-full object-cover"
-            />
-          </div>
-          <div className="absolute -bottom-6 -right-6 flex h-24 w-24 items-center justify-center rounded-full bg-ink text-cream shadow-lg sm:h-28 sm:w-28">
-            <SunburstMark className="h-14 w-14 sm:h-16 sm:w-16" />
+          <HeroArt className="w-full h-auto drop-shadow-[0_25px_45px_rgba(32,28,23,0.25)]" />
+          <div className="absolute bottom-2 right-1/2 translate-x-1/2 sm:right-4 sm:translate-x-0 rounded-full bg-ink px-5 py-2 text-xs sm:text-sm font-semibold text-cream shadow-lg whitespace-nowrap">
+            دان تازه، رست هفتگی
           </div>
         </div>
       </div>
