@@ -1,22 +1,29 @@
-import { categories, weightOptions, formatToman, priceRange, type Weight } from "@/lib/products";
+import { weightOptions, formatToman, type Weight } from "@/lib/products";
+import type { Category } from "@/server/repo/categories";
 
 type Props = {
+  categories: Category[];
   selectedCategories: Set<string>;
   onToggleCategory: (slug: string) => void;
   selectedWeights: Set<Weight>;
   onToggleWeight: (weight: Weight) => void;
   maxPrice: number;
   onMaxPriceChange: (value: number) => void;
+  priceMin: number;
+  priceMax: number;
   onReset: () => void;
 };
 
 export default function FilterPanel({
+  categories,
   selectedCategories,
   onToggleCategory,
   selectedWeights,
   onToggleWeight,
   maxPrice,
   onMaxPriceChange,
+  priceMin,
+  priceMax,
   onReset,
 }: Props) {
   return (
@@ -74,21 +81,19 @@ export default function FilterPanel({
       {/* price */}
       <div className="px-5 py-5">
         <h3 className="text-sm font-semibold text-ink">محدوده قیمت</h3>
-        <p className="mt-3 text-sm text-ink-soft">
-          تا {formatToman(maxPrice)}
-        </p>
+        <p className="mt-3 text-sm text-ink-soft">تا {formatToman(maxPrice)}</p>
         <input
           type="range"
-          min={priceRange.min}
-          max={priceRange.max}
+          min={priceMin}
+          max={priceMax}
           step={5000}
           value={maxPrice}
           onChange={(e) => onMaxPriceChange(Number(e.target.value))}
           className="mt-3 w-full accent-[var(--color-coffee)]"
         />
         <div className="mt-1 flex justify-between text-[11px] text-ink-soft/70">
-          <span>{formatToman(priceRange.min)}</span>
-          <span>{formatToman(priceRange.max)}</span>
+          <span>{formatToman(priceMin)}</span>
+          <span>{formatToman(priceMax)}</span>
         </div>
       </div>
     </div>

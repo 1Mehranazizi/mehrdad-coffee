@@ -2,28 +2,34 @@
 
 import { useMemo, useState } from "react";
 import { SlidersHorizontal, X } from "lucide-react";
-import {
-  products as allProducts,
-  priceRange,
-  sortOptions,
-  type SortOption,
-  type Weight,
-} from "@/lib/products";
+import { sortOptions, type SortOption, type Weight } from "@/lib/products";
+import type { Category } from "@/server/repo/categories";
+import type { ProductCardData } from "@/components/ProductCard";
 import ProductCard from "@/components/ProductCard";
 import FilterPanel from "@/components/shop/FilterPanel";
 
-export default function ShopClient({
-  initialCategory,
-}: {
+type Props = {
+  products: ProductCardData[];
+  categories: Category[];
+  priceMin: number;
+  priceMax: number;
   initialCategory?: string;
-}) {
+};
+
+export default function ShopClient({
+  products,
+  categories,
+  priceMin,
+  priceMax,
+  initialCategory,
+}: Props) {
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(
     () => new Set(initialCategory ? [initialCategory] : [])
   );
   const [selectedWeights, setSelectedWeights] = useState<Set<Weight>>(
     () => new Set()
   );
-  const [maxPrice, setMaxPrice] = useState<number>(priceRange.max);
+  const [maxPrice, setMaxPrice] = useState<number>(priceMax);
   const [sortBy, setSortBy] = useState<SortOption>("default");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
@@ -46,19 +52,19 @@ export default function ShopClient({
   const resetFilters = () => {
     setSelectedCategories(new Set());
     setSelectedWeights(new Set());
-    setMaxPrice(priceRange.max);
+    setMaxPrice(priceMax);
   };
 
   const activeFilterCount =
     selectedCategories.size +
     selectedWeights.size +
-    (maxPrice < priceRange.max ? 1 : 0);
+    (maxPrice < priceMax ? 1 : 0);
 
   const visibleProducts = useMemo(() => {
-    const filtered = allProducts.filter((p) => {
-      if (selectedCategories.size > 0 && !selectedCategories.has(p.category))
+    const filtered = products.filter((p) => {
+      if (selectedCategories.size > 0 && !selectedCategories.has(p.categorySlug ?? ""))
         return false;
-      if (selectedWeights.size > 0 && !selectedWeights.has(p.weight))
+      if (selectedWeights.size > 0 && !selectedWeights.has(p.weight as Weight))
         return false;
       if (p.price > maxPrice) return false;
       return true;
@@ -79,28 +85,29 @@ export default function ShopClient({
         break;
     }
     return sorted;
-  }, [selectedCategories, selectedWeights, maxPrice, sortBy]);
+  }, [products, selectedCategories, selectedWeights, maxPrice, sortBy]);
 
   const filterPanelProps = {
+    categories,
     selectedCategories,
     onToggleCategory: toggleCategory,
     selectedWeights,
     onToggleWeight: toggleWeight,
     maxPrice,
     onMaxPriceChange: setMaxPrice,
+    priceMin,
+    priceMax,
     onReset: resetFilters,
   };
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 md:py-14 grid md:grid-cols-[260px_1fr] gap-8">
-      {/* desktop sidebar */}
       <aside className="hidden md:block h-fit sticky top-24">
         <FilterPanel {...filterPanelProps} />
       </aside>
 
       <div>
-        {/* toolbar */}
-        <div className="flex items-center justify-between gap-3 mb-6 rounded-2xl border border-line bg-cream px-4 py-2">
+        <div className="flex items-center justify-between gap-3 mb-6">
           <button
             onClick={() => setMobileFiltersOpen(true)}
             className="md:hidden flex items-center gap-2 rounded-full border border-line bg-cream px-4 py-2 text-sm text-ink"
@@ -141,7 +148,6 @@ export default function ShopClient({
           {visibleProducts.length} محصول
         </p>
 
-        {/* grid */}
         {visibleProducts.length > 0 ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {visibleProducts.map((product) => (
@@ -161,7 +167,6 @@ export default function ShopClient({
         )}
       </div>
 
-      {/* mobile filter drawer */}
       {mobileFiltersOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div

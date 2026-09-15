@@ -2,12 +2,34 @@
 
 import { useState } from "react";
 import { Check, Minus, Plus, ShoppingBag } from "lucide-react";
+import { useCartStore } from "@/lib/cart-store";
 
-export default function AddToCartBox() {
+type Props = {
+  product: {
+    id: string;
+    slug: string;
+    name: string;
+    price: number;
+    weight: string;
+  };
+};
+
+export default function AddToCartBox({ product }: Props) {
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
+  const addItem = useCartStore((s) => s.addItem);
 
   const handleAdd = () => {
+    addItem(
+      {
+        productId: product.id,
+        slug: product.slug,
+        name: product.name,
+        price: product.price,
+        weight: product.weight,
+      },
+      quantity
+    );
     setAdded(true);
     window.setTimeout(() => setAdded(false), 1800);
   };

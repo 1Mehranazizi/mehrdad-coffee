@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Menu, Search, ShoppingBag, X } from "lucide-react";
-import Image from "next/image";
+import { useCartStore } from "@/lib/cart-store";
 
 const NAV_LINKS = [
   { href: "/shop", label: "فروشگاه" },
@@ -14,13 +14,16 @@ const NAV_LINKS = [
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const itemCount = useCartStore((s) =>
+    s.items.reduce((sum, i) => sum + i.quantity, 0)
+  );
 
   return (
     <header className="sticky top-0 z-50 bg-paper/95 backdrop-blur border-b border-line">
       {/* announcement strip */}
       <div className="bg-ink text-cream text-xs sm:text-sm">
         <p className="mx-auto max-w-6xl px-4 py-2 text-center">
-          ارسال به سراسر ایران · ارسال رایگان و همان روز در کرمانشاه
+          ارسال به سراسر ایران · برای خریدهای بالای ۵۰۰ هزار تومان، ارسال رایگان
         </p>
       </div>
 
@@ -28,15 +31,12 @@ export default function Header() {
         <div className="flex h-18 items-center justify-between py-3">
           {/* logo — first in DOM, sits on the right in RTL */}
           <Link href="/" className="flex items-baseline gap-2 shrink-0">
-          
-            <Image
-  src="/images/logo.png"
-  width={300}
-  height={100}
-  quality={100}
-  alt="Mehrdad Coffee"
-  className="w-30 h-auto"
-/>
+            <span className="text-2xl font-extrabold tracking-tight text-ink">
+              مهرداد
+            </span>
+            <span className="hidden sm:inline text-[11px] tracking-[0.2em] text-ink-soft">
+              MEHRDAD COFFEE
+            </span>
           </Link>
 
           {/* nav */}
@@ -66,9 +66,11 @@ export default function Header() {
               className="relative p-2 rounded-full text-ink hover:bg-paper-deep transition-colors"
             >
               <ShoppingBag size={20} strokeWidth={1.75} />
-              <span className="absolute -top-0.5 -left-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-coffee text-[10px] text-cream">
-                ۰
-              </span>
+              {itemCount > 0 && (
+                <span className="absolute -top-0.5 -left-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-coffee px-1 text-[10px] text-cream">
+                  {itemCount.toLocaleString("fa-IR")}
+                </span>
+              )}
             </Link>
             <button
               aria-label={menuOpen ? "بستن منو" : "باز کردن منو"}

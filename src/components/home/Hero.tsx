@@ -34,7 +34,9 @@ export default function Hero() {
           </h1>
 
           <p className="mt-6 max-w-md mx-auto md:mx-0 text-ink-soft leading-8">
-           از انتخاب دقیق دانه‌ها تا برشته‌کاری تازه، همه‌چیز را با وسواس انجام می‌دهیم تا قهوه‌ای تازه و خوش‌عطر به دستتان برسد؛ برای هر روشی که دوست دارید، با طعمی که به سلیقه‌ی شما نزدیک است.
+            دانه‌های ممتاز عربیکا را انتخاب می‌کنیم، در اصفهان تازه برشته
+            می‌کنیم و همان روز برایتان ارسال می‌کنیم؛ برای اسپرسو، فیلتر یا
+            قهوه‌ی ترک، به سلیقه‌ی خودتان.
           </p>
 
           <div className="mt-9 flex flex-col sm:flex-row items-center justify-center md:justify-start gap-3">

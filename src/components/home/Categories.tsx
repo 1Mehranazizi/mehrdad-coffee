@@ -1,7 +1,9 @@
 import Link from "next/link";
-import { categories } from "@/lib/products";
+import { listCategories } from "@/server/repo/categories";
 
 export default function Categories() {
+  const categories = listCategories();
+
   return (
     <section className="mx-auto max-w-6xl px-4 py-16 md:py-20">
       <div className="flex items-end justify-between gap-4">
