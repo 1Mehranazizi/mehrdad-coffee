@@ -3,7 +3,8 @@ import fs from "node:fs";
 import path from "node:path";
 
 const DATA_DIR = path.join(process.cwd(), "data");
-const DB_PATH = path.join(DATA_DIR, "app.db");
+const IS_PRODUCTION_BUILD = process.env.NEXT_PHASE === "phase-production-build";
+const DB_PATH = process.env.DATABASE_PATH || path.join(DATA_DIR, "app.db");
 const SCHEMA_PATH = path.join(process.cwd(), "src/server/db/schema.sql");
 
 function migrate(connection: Database.Database) {
@@ -62,9 +63,22 @@ function migrate(connection: Database.Database) {
 }
 
 function createConnection() {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-  const connection = new Database(DB_PATH);
-  connection.pragma("journal_mode = WAL");
+  // Next.js evaluates route modules during `next build`. Never open the
+  // mutable production SQLite file during that phase: a stale/corrupt WAL
+  // file must not make an otherwise valid build fail.
+  const connection = new Database(IS_PRODUCTION_BUILD ? ":memory:" : DB_PATH);
+
+  if (!IS_PRODUCTION_BUILD) {
+    // WAL is useful at runtime, but it is not required for correctness.
+    // If a filesystem/locking issue prevents switching modes, keep going in
+    // the default journal mode instead of failing module evaluation.
+    try {
+      connection.pragma("journal_mode = WAL");
+    } catch {
+      // Fall back to SQLite's default journal mode.
+    }
+  }
+
   connection.pragma("foreign_keys = ON");
   connection.exec(fs.readFileSync(SCHEMA_PATH, "utf-8"));
   migrate(connection);
