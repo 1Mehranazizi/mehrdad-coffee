@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
   LayoutDashboard,
   Package,
@@ -6,8 +7,10 @@ import {
   Newspaper,
   MessageSquare,
   Users,
+  SlidersHorizontal,
 } from "lucide-react";
 import AdminLogoutButton from "@/components/admin/AdminLogoutButton";
+import { requireAdmin } from "@/server/auth/admin";
 
 const NAV = [
   { href: "/admin", label: "داشبورد", icon: LayoutDashboard },
@@ -16,13 +19,16 @@ const NAV = [
   { href: "/admin/articles", label: "مقالات", icon: Newspaper },
   { href: "/admin/reviews", label: "نظرات", icon: MessageSquare },
   { href: "/admin/customers", label: "مشتریان", icon: Users },
+  { href: "/admin/products/variables", label: "متغیرهای محصول", icon: SlidersHorizontal },
 ];
 
-export default function AdminDashboardLayout({
+export default async function AdminDashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const admin = await requireAdmin().catch(() => null);
+  if (!admin) redirect("/admin/login");
   return (
     <div className="min-h-screen flex bg-paper">
       <aside className="hidden md:flex w-60 shrink-0 flex-col border-l border-line bg-cream">

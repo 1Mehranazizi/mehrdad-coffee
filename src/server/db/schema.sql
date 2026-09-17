@@ -59,6 +59,25 @@ CREATE TABLE IF NOT EXISTS products (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS grind_options (
+  id TEXT PRIMARY KEY,
+  slug TEXT UNIQUE NOT NULL,
+  title TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS product_variants (
+  id TEXT PRIMARY KEY,
+  product_id TEXT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  weight TEXT NOT NULL,
+  grind_option_id TEXT REFERENCES grind_options(id) ON DELETE SET NULL,
+  price INTEGER NOT NULL,
+  active INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(product_id, weight, grind_option_id)
+);
+CREATE INDEX IF NOT EXISTS idx_product_variants_product ON product_variants(product_id);
+
 CREATE TABLE IF NOT EXISTS orders (
   id TEXT PRIMARY KEY,
   order_number TEXT UNIQUE NOT NULL,
@@ -87,6 +106,7 @@ CREATE TABLE IF NOT EXISTS order_items (
   product_id TEXT NOT NULL REFERENCES products(id),
   product_name TEXT NOT NULL,
   weight TEXT NOT NULL,
+  grind TEXT,
   unit_price INTEGER NOT NULL,
   quantity INTEGER NOT NULL
 );

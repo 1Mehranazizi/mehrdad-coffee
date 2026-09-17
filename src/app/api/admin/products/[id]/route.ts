@@ -39,6 +39,9 @@ export async function PATCH(
   const weight = String(form.get("weight") ?? "");
   const categoryId = String(form.get("categoryId") ?? "");
   const description = String(form.get("description") ?? "");
+  const variantsRaw = String(form.get("variants") ?? "");
+  let variants: Array<{ weight: string; grindOptionId?: string | null; price: number; active?: boolean }> | undefined;
+  if (variantsRaw) { try { variants = JSON.parse(variantsRaw); } catch { return NextResponse.json({ error: "متغیرهای محصول نامعتبر است" }, { status: 400 }); } }
   const published = form.get("published") === "true";
   const image = form.get("image");
 
@@ -65,6 +68,7 @@ export async function PATCH(
     description,
     published,
     imageUrl,
+    variants,
   });
   return NextResponse.json({ product: getProductById(id) });
 }

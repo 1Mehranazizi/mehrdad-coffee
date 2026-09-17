@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { SlidersHorizontal, X } from "lucide-react";
 import { sortOptions, type SortOption, type Weight } from "@/lib/products";
 import type { Category } from "@/server/repo/categories";
@@ -87,6 +87,20 @@ export default function ShopClient({
     return sorted;
   }, [products, selectedCategories, selectedWeights, maxPrice, sortBy]);
 
+  const [page, setPage] = useState(1);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => { setPage(1); }, [selectedCategories, selectedWeights, maxPrice, sortBy]);
+  useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0]?.isIntersecting) setPage((p) => Math.min(p + 1, Math.ceil(visibleProducts.length / 9)));
+    }, { rootMargin: "300px" });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [visibleProducts.length]);
+  const shownProducts = visibleProducts.slice(0, page * 9);
+
   const filterPanelProps = {
     categories,
     selectedCategories,
@@ -149,11 +163,18 @@ export default function ShopClient({
         </p>
 
         {visibleProducts.length > 0 ? (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {visibleProducts.map((product) => (
-              <ProductCard key={product.slug} product={product} />
-            ))}
-          </div>
+          <>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {shownProducts.map((product) => (
+                <ProductCard key={product.slug} product={product} />
+              ))}
+            </div>
+            {shownProducts.length < visibleProducts.length && (
+              <div ref={sentinelRef} className="py-10 flex justify-center">
+                <div className="h-8 w-8 rounded-full border-2 border-line border-t-coffee animate-spin" aria-label="در حال بارگذاری" />
+              </div>
+            )}
+          </>
         ) : (
           <div className="rounded-2xl border border-dashed border-line py-20 text-center text-ink-soft">
             <p>محصولی با این فیلترها پیدا نشد.</p>

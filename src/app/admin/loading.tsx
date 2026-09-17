@@ -1,0 +1,1 @@
+export default function Loading(){return <main className="min-h-screen bg-paper flex items-center justify-center"><div className="text-center"><div className="mx-auto h-10 w-10 rounded-full border-[3px] border-line border-t-coffee animate-spin"/><p className="mt-3 text-sm text-ink-soft">در حال بارگذاری پنل...</p></div></main>;}

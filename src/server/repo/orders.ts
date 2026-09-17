@@ -1,6 +1,6 @@
 import { db } from "@/server/db/client";
 import { newId } from "@/server/db/ids";
-import { getProductById } from "@/server/repo/products";
+import { getProductById, getProductVariant } from "@/server/repo/products";
 
 export type OrderStatus =
   | "PENDING_PAYMENT"
@@ -16,6 +16,7 @@ export type OrderItem = {
   productId: string;
   productName: string;
   weight: string;
+  grind: string | null;
   unitPrice: number;
   quantity: number;
 };
@@ -69,6 +70,7 @@ type OrderItemRow = {
   product_id: string;
   product_name: string;
   weight: string;
+  grind: string | null;
   unit_price: number;
   quantity: number;
 };
@@ -80,6 +82,7 @@ function mapItem(row: OrderItemRow): OrderItem {
     productId: row.product_id,
     productName: row.product_name,
     weight: row.weight,
+    grind: row.grind,
     unitPrice: row.unit_price,
     quantity: row.quantity,
   };
@@ -161,7 +164,7 @@ const FREE_SHIPPING_THRESHOLD = 1500000;
 
 export type CreateOrderInput = {
   customerId: string;
-  items: { productId: string; quantity: number }[];
+  items: { productId: string; variantId?: string; quantity: number }[];
   receiverName: string;
   receiverPhone: string;
   province: string;
@@ -177,14 +180,23 @@ export function createOrderFromCart(
 
   const resolvedItems = input.items.map((item) => {
     const product = getProductById(item.productId);
-    if (!product || !product.published) {
-      return null;
-    }
+    const variant = item.variantId ? getProductVariant(item.variantId) : undefined;
+    if (!product || !product.published || (variant && (variant.productId !== product.id || !variant.active))) return null;
+    const selected = variant ?? {
+      id: `legacy_${product.id}`,
+      productId: product.id,
+      weight: product.weight,
+      grindOptionId: null,
+      grind: null,
+      price: product.price,
+      active: true,
+    };
     return {
       productId: product.id,
       productName: product.name,
-      weight: product.weight,
-      unitPrice: product.price,
+      weight: selected.weight,
+      grind: selected.grind,
+      unitPrice: selected.price,
       quantity: Math.max(1, Math.min(20, item.quantity)),
     };
   });
@@ -206,8 +218,8 @@ export function createOrderFromCart(
      VALUES (?, ?, 'PENDING_PAYMENT', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   );
   const insertItem = db.prepare(
-    `INSERT INTO order_items (id, order_id, product_id, product_name, weight, unit_price, quantity)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO order_items (id, order_id, product_id, product_name, weight, grind, unit_price, quantity)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
   );
 
   const tx = db.transaction(() => {
@@ -232,6 +244,7 @@ export function createOrderFromCart(
         item.productId,
         item.productName,
         item.weight,
+        item.grind,
         item.unitPrice,
         item.quantity
       );

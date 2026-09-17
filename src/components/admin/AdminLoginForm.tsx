@@ -1,10 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
 export default function AdminLoginForm() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -25,8 +23,7 @@ export default function AdminLoginForm() {
         setError(data.error || "خطایی رخ داد");
         return;
       }
-      router.push("/admin");
-      router.refresh();
+      window.location.assign("/admin");
     } finally {
       setLoading(false);
     }

@@ -9,26 +9,11 @@ function seedCategories() {
   if (existing.n > 0) return;
 
   const categories = [
-    {
-      slug: "espresso",
-      title: "اسپرسو",
-      description: "رست تیره، بادی سنگین، مناسب دستگاه اسپرسوساز",
-    },
-    {
-      slug: "filter",
-      title: "قهوه فیلتر",
-      description: "رست متوسط، عطر شفاف، مناسب V60 و کمکس",
-    },
-    {
-      slug: "turkish",
-      title: "پودر ترک",
-      description: "آسیاب فوق‌ریز، مناسب دم‌کردن سنتی",
-    },
-    {
-      slug: "whole-bean",
-      title: "دان کامل",
-      description: "تازه برشته‌شده، برای آسیاب در خانه",
-    },
+    { slug: "coffee", title: "قهوه", description: "دان و پودر قهوه تازه برشته‌شده" },
+    { slug: "nescafe", title: "نسکافه", description: "قهوه فوری و محصولات آماده" },
+    { slug: "hot-chocolate", title: "هات چاکلت", description: "نوشیدنی شکلاتی گرم و خوش‌عطر" },
+    { slug: "masala-tea", title: "چای ماسالا", description: "ترکیب ادویه‌ای گرم و معطر" },
+    { slug: "tea", title: "چای", description: "انواع چای برای دم‌آوری روزانه" },
   ];
 
   const insert = db.prepare(
@@ -58,18 +43,18 @@ function seedProducts() {
   );
 
   const products = [
-    { slug: "mehrdad-espresso-classic", name: "بلند اسپرسو کلاسیک", origin: "برزیل و اتیوپی", price: 385000, weight: "250", category: "espresso" },
-    { slug: "mehrdad-espresso-dark", name: "اسپرسو رست تیره", origin: "برزیل و هند", price: 620000, weight: "1000", category: "espresso" },
-    { slug: "mehrdad-espresso-decaf", name: "اسپرسو بدون کافئین", origin: "کلمبیا", price: 455000, weight: "250", category: "espresso" },
-    { slug: "mehrdad-espresso-blend-mild", name: "اسپرسو بلند ملایم", origin: "برزیل و کلمبیا", price: 275000, weight: "250", category: "espresso" },
-    { slug: "mehrdad-filter-yirgacheffe", name: "یرگاچف فیلتر", origin: "اتیوپی", price: 420000, weight: "250", category: "filter" },
-    { slug: "mehrdad-filter-light", name: "فیلتر رست روشن", origin: "کنیا", price: 460000, weight: "250", category: "filter" },
-    { slug: "mehrdad-filter-house", name: "فیلتر هاوس بلند", origin: "کلمبیا و اتیوپی", price: 560000, weight: "500", category: "filter" },
-    { slug: "mehrdad-turkish-classic", name: "پودر ترک ممتاز", origin: "بلند اختصاصی مهرداد", price: 310000, weight: "250", category: "turkish" },
-    { slug: "mehrdad-turkish-cardamom", name: "پودر ترک با هل", origin: "بلند اختصاصی مهرداد", price: 340000, weight: "250", category: "turkish" },
-    { slug: "mehrdad-whole-bean-house", name: "بلند هاوس دان کامل", origin: "کلمبیا و هند", price: 350000, weight: "500", category: "whole-bean" },
-    { slug: "mehrdad-whole-bean-signature", name: "بلند سیگنیچر مهرداد", origin: "اتیوپی، برزیل و هند", price: 690000, weight: "1000", category: "whole-bean" },
-    { slug: "mehrdad-whole-bean-single-origin", name: "دان کامل تک‌خاستگاه گواتمالا", origin: "گواتمالا", price: 480000, weight: "500", category: "whole-bean" },
+    { slug: "mehrdad-espresso-classic", name: "بلند اسپرسو کلاسیک", origin: "برزیل و اتیوپی", price: 385000, weight: "250", category: "coffee" },
+    { slug: "mehrdad-espresso-dark", name: "اسپرسو رست تیره", origin: "برزیل و هند", price: 620000, weight: "1000", category: "coffee" },
+    { slug: "mehrdad-espresso-decaf", name: "اسپرسو بدون کافئین", origin: "کلمبیا", price: 455000, weight: "250", category: "coffee" },
+    { slug: "mehrdad-espresso-blend-mild", name: "اسپرسو بلند ملایم", origin: "برزیل و کلمبیا", price: 275000, weight: "250", category: "coffee" },
+    { slug: "mehrdad-filter-yirgacheffe", name: "یرگاچف فیلتر", origin: "اتیوپی", price: 420000, weight: "250", category: "coffee" },
+    { slug: "mehrdad-filter-light", name: "فیلتر رست روشن", origin: "کنیا", price: 460000, weight: "250", category: "coffee" },
+    { slug: "mehrdad-filter-house", name: "فیلتر هاوس بلند", origin: "کلمبیا و اتیوپی", price: 560000, weight: "500", category: "coffee" },
+    { slug: "mehrdad-turkish-classic", name: "پودر ترک ممتاز", origin: "بلند اختصاصی مهرداد", price: 310000, weight: "250", category: "coffee" },
+    { slug: "mehrdad-turkish-cardamom", name: "پودر ترک با هل", origin: "بلند اختصاصی مهرداد", price: 340000, weight: "250", category: "coffee" },
+    { slug: "mehrdad-whole-bean-house", name: "بلند هاوس دان کامل", origin: "کلمبیا و هند", price: 350000, weight: "500", category: "coffee" },
+    { slug: "mehrdad-whole-bean-signature", name: "بلند سیگنیچر مهرداد", origin: "اتیوپی، برزیل و هند", price: 690000, weight: "1000", category: "coffee" },
+    { slug: "mehrdad-whole-bean-single-origin", name: "دان کامل تک‌خاستگاه گواتمالا", origin: "گواتمالا", price: 480000, weight: "500", category: "coffee" },
   ];
 
   const insert = db.prepare(
@@ -77,16 +62,24 @@ function seedProducts() {
      VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)`
   );
   for (const p of products) {
+    const productId = newId("prod");
     insert.run(
-      newId("prod"),
+      productId,
       p.slug,
       p.name,
       p.origin,
       p.price,
       p.weight,
-      `${p.name} با دانه‌های ${p.origin} تهیه و در اصفهان تازه برشته می‌شود.`,
+      `${p.name} با دانه‌های ${p.origin} تهیه و در کرمانشاه تازه برشته می‌شود.`,
       categoryIdBySlug[p.category]
     );
+    const grinds = db.prepare("SELECT id FROM grind_options ORDER BY created_at ASC").all() as { id: string }[];
+    if (p.category === "coffee") {
+      const addVariant = db.prepare("INSERT OR IGNORE INTO product_variants (id, product_id, weight, grind_option_id, price, active) VALUES (?, ?, ?, ?, ?, 1)");
+      for (const g of grinds) addVariant.run(newId("var"), productId, p.weight, g.id, p.price);
+    } else {
+      db.prepare("INSERT INTO product_variants (id, product_id, weight, grind_option_id, price, active) VALUES (?, ?, ?, NULL, ?, 1)").run(newId("var"), productId, p.weight, p.price);
+    }
   }
 }
 

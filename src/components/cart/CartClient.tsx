@@ -39,7 +39,7 @@ export default function CartClient() {
 
       <ul className="mt-8 divide-y divide-line rounded-2xl border border-line bg-cream">
         {items.map((item) => (
-          <li key={item.productId} className="flex items-center gap-4 p-4 sm:p-5">
+          <li key={item.variantId} className="flex items-center gap-4 p-4 sm:p-5">
             <div className="min-w-0 flex-1">
               <Link
                 href={`/shop/${item.slug}`}
@@ -48,7 +48,7 @@ export default function CartClient() {
                 {item.name}
               </Link>
               <p className="mt-1 text-xs text-ink-soft">
-                {weightLabel(item.weight)} · {formatToman(item.price)}
+                {weightLabel(item.weight)}{item.grind ? ` · ${item.grind}` : ""} · {formatToman(item.price)}
               </p>
             </div>
 
@@ -56,7 +56,7 @@ export default function CartClient() {
               <button
                 type="button"
                 aria-label="کم کردن تعداد"
-                onClick={() => setQuantity(item.productId, item.quantity - 1)}
+                onClick={() => setQuantity(item.variantId, item.quantity - 1)}
                 className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-paper-deep"
               >
                 <Minus size={14} />
@@ -65,7 +65,7 @@ export default function CartClient() {
               <button
                 type="button"
                 aria-label="زیاد کردن تعداد"
-                onClick={() => setQuantity(item.productId, item.quantity + 1)}
+                onClick={() => setQuantity(item.variantId, item.quantity + 1)}
                 className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-paper-deep"
               >
                 <Plus size={14} />
@@ -79,7 +79,7 @@ export default function CartClient() {
             <button
               type="button"
               aria-label="حذف از سبد"
-              onClick={() => removeItem(item.productId)}
+              onClick={() => removeItem(item.variantId)}
               className="p-2 text-ink-soft hover:text-red-700 transition-colors shrink-0"
             >
               <Trash2 size={18} />

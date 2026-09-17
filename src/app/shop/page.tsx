@@ -10,18 +10,18 @@ export const metadata = {
     "خرید دان و پودر قهوه تازه برشته‌شده مهرداد؛ اسپرسو، فیلتر، ترک و دان کامل.",
 };
 
-type SearchParams = Promise<{ category?: string }>;
+type SearchParams = Promise<{ category?: string; search?: string }>;
 
 export default async function ShopPage({
   searchParams,
 }: {
   searchParams: SearchParams;
 }) {
-  const { category } = await searchParams;
+  const { category, search } = await searchParams;
 
   const categories = listCategories();
   const categoryById = new Map(categories.map((c) => [c.id, c]));
-  const products = listProducts({ onlyPublished: true }).map((p) => ({
+  const products = listProducts({ onlyPublished: true, search }).map((p) => ({
     id: p.id,
     slug: p.slug,
     name: p.name,
@@ -38,13 +38,10 @@ export default async function ShopPage({
       <Header />
       <main className="flex-1">
         <div className="border-b border-line bg-paper-deep/60">
-          <div className="mx-auto max-w-6xl px-4 py-10 text-center md:text-right">
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-ink">
-              فروشگاه قهوه مهرداد
-            </h1>
-            <p className="mt-2 text-ink-soft">
-              دان و پودر قهوه، تازه برشته‌شده و آماده ارسال.
-            </p>
+          <div className="mx-auto max-w-6xl px-4 py-12 text-center md:text-right">
+            <p className="text-xs font-semibold tracking-[0.2em] text-coffee">MEHRDAD COFFEE</p>
+            <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold text-ink">فروشگاه مهرداد</h1>
+            <p className="mt-2 text-ink-soft">{search ? `نتایج جستجو برای «${search}»` : "قهوه، نسکافه، هات چاکلت و چای ماسالا؛ تازه و آماده ارسال."}</p>
           </div>
         </div>
         <ShopClient

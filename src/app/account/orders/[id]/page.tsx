@@ -32,7 +32,7 @@ export default async function AccountOrderDetailPage({
             <div>
               <p className="font-medium text-ink">{item.productName}</p>
               <p className="text-xs text-ink-soft">
-                {weightLabel(item.weight)} × {item.quantity}
+                {weightLabel(item.weight)}{item.grind ? ` · ${item.grind}` : ""} × {item.quantity}
               </p>
             </div>
             <p className="text-sm text-ink">

@@ -103,7 +103,7 @@ export default function CheckoutClient() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+          items: items.map((i) => ({ productId: i.productId, variantId: i.variantId, quantity: i.quantity })),
           ...payload,
           saveAddress: selectedAddressId === "new" && saveAddress,
           addressTitle: addressTitle || "آدرس جدید",
@@ -287,7 +287,7 @@ export default function CheckoutClient() {
             <li key={item.productId} className="flex justify-between text-ink-soft">
               <span>
                 {item.name} × {item.quantity}
-                <span className="block text-xs">{weightLabel(item.weight)}</span>
+                <span className="block text-xs">{weightLabel(item.weight)}{item.grind ? ` · ${item.grind}` : ""}</span>
               </span>
               <span className="text-ink">{formatToman(item.price * item.quantity)}</span>
             </li>

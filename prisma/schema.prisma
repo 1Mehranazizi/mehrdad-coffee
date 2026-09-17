@@ -77,6 +77,7 @@ model Product {
   categoryId String
   category   Category @relation(fields: [categoryId], references: [id])
 
+  variants   ProductVariant[]
   reviews    Review[]
   orderItems OrderItem[]
 }
@@ -133,6 +134,7 @@ model OrderItem {
   // snapshots, so later product edits don't change historical orders
   productName String
   weight      String
+  grind       String?
   unitPrice   Int
   quantity    Int
 

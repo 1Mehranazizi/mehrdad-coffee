@@ -11,6 +11,7 @@ import Accordion from "@/components/shop/Accordion";
 import ReviewForm from "@/components/shop/ReviewForm";
 import {
   getProductBySlug,
+  getProductWithVariantsBySlug,
   getRelatedProducts,
   listProducts,
 } from "@/server/repo/products";
@@ -30,7 +31,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = getProductWithVariantsBySlug(slug);
   if (!product) return {};
   return {
     title: `${product.name} | قهوه مهرداد`,
@@ -44,10 +45,11 @@ export default async function ProductPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = getProductWithVariantsBySlug(slug);
   if (!product) notFound();
 
   const category = getCategoryById(product.categoryId);
+  const variants = product.variants ?? [];
   const related = getRelatedProducts(product);
   const reviews = listApprovedReviewsForProduct(product.id);
   const avgRating =
@@ -115,7 +117,7 @@ export default async function ProductPage({
               {product.name}
             </h1>
             <p className="mt-2 text-ink-soft">
-              خاستگاه: {product.origin} · وزن: {weightLabel(product.weight)}
+              خاستگاه: {product.origin} · {variants.length ? `${variants.length.toLocaleString("fa-IR")} انتخاب قابل خرید` : weightLabel(product.weight)}
             </p>
 
             {avgRating !== null && (
@@ -132,18 +134,14 @@ export default async function ProductPage({
 
             <p className="mt-5 text-sm leading-7 text-ink-soft">
               {product.description ||
-                `${product.name} با دانه‌های ${product.origin} تهیه و در اصفهان تازه برشته می‌شود.`}
+                `${product.name} با دانه‌های ${product.origin} تهیه و در کرمانشاه تازه برشته می‌شود.`}
             </p>
 
             <div className="mt-7">
               <AddToCartBox
-                product={{
-                  id: product.id,
-                  slug: product.slug,
-                  name: product.name,
-                  price: product.price,
-                  weight: product.weight,
-                }}
+                product={{ id: product.id, slug: product.slug, name: product.name }}
+                variants={variants}
+                isCoffee={category?.slug === "coffee"}
               />
             </div>
 

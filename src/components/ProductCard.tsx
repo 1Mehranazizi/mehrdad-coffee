@@ -5,7 +5,6 @@ import Image from "next/image";
 import { Plus } from "lucide-react";
 import { formatToman, weightLabel } from "@/lib/products";
 import { SunburstMark } from "@/components/icons";
-import { useCartStore } from "@/lib/cart-store";
 
 export type ProductCardData = {
   id: string;
@@ -19,8 +18,6 @@ export type ProductCardData = {
 };
 
 export default function ProductCard({ product }: { product: ProductCardData }) {
-  const addItem = useCartStore((s) => s.addItem);
-
   return (
     <article className="group rounded-2xl bg-cream border border-line overflow-hidden">
       <Link
@@ -51,22 +48,13 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
           <span className="text-sm font-semibold text-ink">
             {formatToman(product.price)}
           </span>
-          <button
-            type="button"
-            aria-label={`افزودن ${product.name} به سبد خرید`}
-            onClick={() =>
-              addItem({
-                productId: product.id,
-                slug: product.slug,
-                name: product.name,
-                price: product.price,
-                weight: product.weight,
-              })
-            }
+          <Link
+            href={`/shop/${product.slug}`}
+            aria-label={`انتخاب وزن ${product.name}`}
             className="flex h-9 w-9 items-center justify-center rounded-full bg-ink text-cream hover:bg-coffee-deep transition-colors"
           >
             <Plus size={18} strokeWidth={2} />
-          </button>
+          </Link>
         </div>
       </div>
     </article>

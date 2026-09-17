@@ -1,0 +1,3 @@
+export default function Loading() {
+ return <main className="flex-1"><div className="mx-auto max-w-6xl px-4 py-12"><div className="h-8 w-48 rounded-xl bg-paper-deep animate-pulse"/><div className="mt-3 h-4 w-72 rounded bg-paper-deep animate-pulse"/><div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{Array.from({length:6}).map((_,i)=><div key={i} className="overflow-hidden rounded-3xl border border-line bg-cream"><div className="aspect-square bg-paper-deep animate-pulse"/><div className="p-5 space-y-3"><div className="h-5 w-2/3 rounded bg-paper-deep animate-pulse"/><div className="h-4 w-1/2 rounded bg-paper-deep animate-pulse"/></div></div>)}</div></div></main>;
+}
