@@ -4,13 +4,13 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 export type CartItem = {
-  productId: string;
   variantId: string;
+  productId: string;
   slug: string;
   name: string;
   price: number;
   weight: string;
-  grind?: string;
+  grindTypeName: string | null;
   quantity: number;
 };
 
@@ -38,7 +38,7 @@ export const useCartStore = create<CartState>()(
             ),
           });
         } else {
-          set({ items: [...items, { ...item, quantity: Math.min(20, Math.max(1, quantity)) }] });
+          set({ items: [...items, { ...item, quantity }] });
         }
       },
       removeItem: (variantId) =>
@@ -53,24 +53,10 @@ export const useCartStore = create<CartState>()(
         }),
       clear: () => set({ items: [] }),
     }),
-    {
-      name: "mehrdad-cart",
-      version: 2,
-      migrate: (persisted: unknown) => {
-        const state = persisted as { items?: Array<Record<string, unknown>> };
-        return {
-          ...state,
-          items: (state.items ?? []).map((item) => ({
-            ...item,
-            variantId: String(item.variantId ?? item.productId),
-            grind: item.grind ? String(item.grind) : undefined,
-          })),
-        };
-      },
-    }
+    { name: "mehrdad-cart" }
   )
 );
 
-export function cartTotal(items: CartItem[]) {
+export function cartTotal(items: CartItem[]): number {
   return items.reduce((sum, i) => sum + i.price * i.quantity, 0);
 }

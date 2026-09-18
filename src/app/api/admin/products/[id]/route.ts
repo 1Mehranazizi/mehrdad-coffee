@@ -35,17 +35,20 @@ export async function PATCH(
   const slug = String(form.get("slug") ?? "").trim();
   const name = String(form.get("name") ?? "").trim();
   const origin = String(form.get("origin") ?? "").trim();
-  const price = Number(form.get("price"));
-  const weight = String(form.get("weight") ?? "");
   const categoryId = String(form.get("categoryId") ?? "");
   const description = String(form.get("description") ?? "");
-  const variantsRaw = String(form.get("variants") ?? "");
-  let variants: Array<{ weight: string; grindOptionId?: string | null; price: number; active?: boolean }> | undefined;
-  if (variantsRaw) { try { variants = JSON.parse(variantsRaw); } catch { return NextResponse.json({ error: "متغیرهای محصول نامعتبر است" }, { status: 400 }); } }
   const published = form.get("published") === "true";
   const image = form.get("image");
+  const variantsRaw = String(form.get("variants") ?? "[]");
 
-  if (!slug || !name || !origin || !categoryId || !Number.isFinite(price) || price <= 0) {
+  let variants: { weight: string; grindTypeId?: string | null; price: number }[] = [];
+  try {
+    variants = JSON.parse(variantsRaw);
+  } catch {
+    return NextResponse.json({ error: "اطلاعات گزینه‌های محصول نامعتبر است" }, { status: 400 });
+  }
+
+  if (!slug || !name || !origin || !categoryId || variants.length === 0) {
     return NextResponse.json({ error: "لطفاً همه‌ی فیلدهای ضروری را کامل و معتبر پر کنید" }, { status: 400 });
   }
 
@@ -62,8 +65,6 @@ export async function PATCH(
     slug,
     name,
     origin,
-    price,
-    weight,
     categoryId,
     description,
     published,

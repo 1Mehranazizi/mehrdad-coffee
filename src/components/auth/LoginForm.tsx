@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Spinner from "@/components/Spinner";
 
 const PHONE_REGEX = /^09\d{9}$/;
 
@@ -93,9 +94,9 @@ export default function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-full bg-ink py-3 text-sm font-semibold text-cream hover:bg-coffee-deep transition-colors disabled:opacity-60"
+          className="w-full flex items-center justify-center gap-2 rounded-full bg-ink py-3 text-sm font-semibold text-cream hover:bg-coffee-deep transition-colors disabled:opacity-60"
         >
-          {loading ? "در حال ارسال..." : "دریافت کد تایید"}
+          {loading ? (<><Spinner className="h-4 w-4" /> در حال ارسال...</>) : "دریافت کد تایید"}
         </button>
       </form>
     );
@@ -123,9 +124,9 @@ export default function LoginForm() {
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-full bg-ink py-3 text-sm font-semibold text-cream hover:bg-coffee-deep transition-colors disabled:opacity-60"
+        className="w-full flex items-center justify-center gap-2 rounded-full bg-ink py-3 text-sm font-semibold text-cream hover:bg-coffee-deep transition-colors disabled:opacity-60"
       >
-        {loading ? "در حال بررسی..." : "ورود"}
+        {loading ? (<><Spinner className="h-4 w-4" /> در حال بررسی...</>) : "ورود"}
       </button>
       <button
         type="button"

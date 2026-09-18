@@ -1,8 +1,39 @@
 import Link from "next/link";
-import { Coffee, ArrowRight } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { SunburstMark } from "@/components/icons";
 
 export default function NotFound() {
-  return <><Header/><main className="flex-1 flex items-center justify-center px-4 py-20"><div className="max-w-lg text-center"><div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-ink text-cream"><Coffee size={34}/></div><p className="mt-7 text-xs font-semibold tracking-[0.25em] text-coffee">404</p><h1 className="mt-2 text-3xl font-extrabold text-ink">این صفحه پیدا نشد</h1><p className="mt-3 leading-7 text-ink-soft">ممکن است آدرس تغییر کرده باشد. از اینجا می‌توانید دوباره به فروشگاه برگردید.</p><Link href="/shop" className="mt-7 inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3 text-sm font-semibold text-cream"><ArrowRight size={17}/> رفتن به فروشگاه</Link></div></main><Footer/></>;
+  return (
+    <>
+      <Header />
+      <main className="flex-1 flex items-center justify-center px-4 py-20">
+        <div className="w-full max-w-sm text-center">
+          <SunburstMark className="h-20 w-20 mx-auto text-ink" />
+          <p className="mt-6 text-6xl font-extrabold text-ink">۴۰۴</p>
+          <h1 className="mt-3 text-xl font-bold text-ink">
+            این صفحه پیدا نشد
+          </h1>
+          <p className="mt-2 text-sm text-ink-soft">
+            ممکن است لینک اشتباه باشد یا این صفحه جابه‌جا شده باشد.
+          </p>
+          <div className="mt-7 flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
+              href="/"
+              className="rounded-full bg-ink px-6 py-3 text-sm font-semibold text-cream hover:bg-coffee-deep transition-colors"
+            >
+              بازگشت به خانه
+            </Link>
+            <Link
+              href="/shop"
+              className="rounded-full border border-line px-6 py-3 text-sm font-semibold text-ink hover:border-coffee transition-colors"
+            >
+              مشاهده فروشگاه
+            </Link>
+          </div>
+        </div>
+      </main>
+      <Footer />
+    </>
+  );
 }

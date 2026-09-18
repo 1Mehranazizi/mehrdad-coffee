@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Spinner from "@/components/Spinner";
 
 export default function AdminLoginForm() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -23,7 +26,8 @@ export default function AdminLoginForm() {
         setError(data.error || "خطایی رخ داد");
         return;
       }
-      window.location.assign("/admin");
+      router.push("/admin");
+      router.refresh();
     } finally {
       setLoading(false);
     }
@@ -51,9 +55,9 @@ export default function AdminLoginForm() {
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-full bg-ink py-3 text-sm font-semibold text-cream hover:bg-coffee-deep transition-colors disabled:opacity-60"
+        className="w-full flex items-center justify-center gap-2 rounded-full bg-ink py-3 text-sm font-semibold text-cream hover:bg-coffee-deep transition-colors disabled:opacity-60"
       >
-        {loading ? "در حال ورود..." : "ورود"}
+        {loading ? (<><Spinner className="h-4 w-4" /> در حال ورود...</>) : "ورود"}
       </button>
     </form>
   );

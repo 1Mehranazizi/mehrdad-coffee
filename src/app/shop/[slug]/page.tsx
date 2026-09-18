@@ -6,12 +6,11 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
 import { SunburstMark } from "@/components/icons";
-import AddToCartBox from "@/components/shop/AddToCartBox";
+import VariantSelector from "@/components/shop/VariantSelector";
 import Accordion from "@/components/shop/Accordion";
 import ReviewForm from "@/components/shop/ReviewForm";
 import {
   getProductBySlug,
-  getProductWithVariantsBySlug,
   getRelatedProducts,
   listProducts,
 } from "@/server/repo/products";
@@ -19,7 +18,7 @@ import { getCategoryById } from "@/server/repo/categories";
 import { listApprovedReviewsForProduct, hasCustomerReviewedProduct } from "@/server/repo/reviews";
 import { hasCustomerPurchasedProduct } from "@/server/repo/customers";
 import { getCurrentCustomer } from "@/server/auth/customer";
-import { weightLabel, formatToman, brewingTips } from "@/lib/products";
+import { brewingTips, weightLabel } from "@/lib/products";
 
 export function generateStaticParams() {
   return listProducts({ onlyPublished: true }).map((p) => ({ slug: p.slug }));
@@ -31,11 +30,11 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const product = getProductWithVariantsBySlug(slug);
+  const product = getProductBySlug(slug);
   if (!product) return {};
   return {
     title: `${product.name} | قهوه مهرداد`,
-    description: `${product.name} از ${product.origin} — ${weightLabel(product.weight)}. خرید آنلاین قهوه تازه برشته‌شده مهرداد.`,
+    description: `${product.name} از ${product.origin}. خرید آنلاین از قهوه مهرداد.`,
   };
 }
 
@@ -45,11 +44,10 @@ export default async function ProductPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const product = getProductWithVariantsBySlug(slug);
+  const product = getProductBySlug(slug);
   if (!product) notFound();
 
   const category = getCategoryById(product.categoryId);
-  const variants = product.variants ?? [];
   const related = getRelatedProducts(product);
   const reviews = listApprovedReviewsForProduct(product.id);
   const avgRating =
@@ -116,9 +114,7 @@ export default async function ProductPage({
             <h1 className="mt-2 text-3xl font-extrabold text-ink">
               {product.name}
             </h1>
-            <p className="mt-2 text-ink-soft">
-              خاستگاه: {product.origin} · {variants.length ? `${variants.length.toLocaleString("fa-IR")} انتخاب قابل خرید` : weightLabel(product.weight)}
-            </p>
+            <p className="mt-2 text-ink-soft">خاستگاه: {product.origin}</p>
 
             {avgRating !== null && (
               <div className="mt-3 flex items-center gap-1.5 text-sm text-ink-soft">
@@ -128,20 +124,16 @@ export default async function ProductPage({
               </div>
             )}
 
-            <p className="mt-6 text-3xl font-bold text-ink">
-              {formatToman(product.price)}
-            </p>
-
             <p className="mt-5 text-sm leading-7 text-ink-soft">
               {product.description ||
-                `${product.name} با دانه‌های ${product.origin} تهیه و در کرمانشاه تازه برشته می‌شود.`}
+                `${product.name} با دانه‌های ${product.origin} تهیه و در اصفهان تازه برشته می‌شود.`}
             </p>
 
             <div className="mt-7">
-              <AddToCartBox
+              <VariantSelector
                 product={{ id: product.id, slug: product.slug, name: product.name }}
-                variants={variants}
-                isCoffee={category?.slug === "coffee"}
+                variants={product.variants}
+                requiresGrind={category?.requiresGrind ?? false}
               />
             </div>
 
@@ -169,7 +161,12 @@ export default async function ProductPage({
                       <ul className="space-y-1.5">
                         <li>دسته‌بندی: {category?.title ?? "-"}</li>
                         <li>خاستگاه: {product.origin}</li>
-                        <li>وزن: {weightLabel(product.weight)}</li>
+                        <li>
+                          وزن‌های موجود:{" "}
+                          {Array.from(new Set(product.variants.map((v) => v.weight)))
+                            .map((w) => weightLabel(w))
+                            .join("، ")}
+                        </li>
                       </ul>
                     ),
                   },

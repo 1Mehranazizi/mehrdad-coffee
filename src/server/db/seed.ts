@@ -3,82 +3,162 @@ import { db } from "./client";
 import { newId } from "./ids";
 
 function seedCategories() {
-  const existing = db.prepare("SELECT COUNT(*) as n FROM categories").get() as {
-    n: number;
-  };
+  const existing = db.prepare("SELECT COUNT(*) as n FROM categories").get() as { n: number };
   if (existing.n > 0) return;
 
   const categories = [
-    { slug: "coffee", title: "قهوه", description: "دان و پودر قهوه تازه برشته‌شده" },
-    { slug: "nescafe", title: "نسکافه", description: "قهوه فوری و محصولات آماده" },
-    { slug: "hot-chocolate", title: "هات چاکلت", description: "نوشیدنی شکلاتی گرم و خوش‌عطر" },
-    { slug: "masala-tea", title: "چای ماسالا", description: "ترکیب ادویه‌ای گرم و معطر" },
-    { slug: "tea", title: "چای", description: "انواع چای برای دم‌آوری روزانه" },
+    { slug: "coffee", title: "قهوه", description: "دان و پودر قهوه تازه برشته‌شده", requiresGrind: 1 },
+    { slug: "nescafe", title: "نسکافه", description: "نسکافه فوری، آماده در چند ثانیه", requiresGrind: 0 },
+    { slug: "hot-chocolate", title: "هات چاکلت", description: "پودر شکلات داغ، غلیظ و کاکائویی", requiresGrind: 0 },
+    { slug: "masala-chai", title: "چای ماسالا", description: "چای ادویه‌ای هندی، معطر و گرم‌کننده", requiresGrind: 0 },
   ];
 
   const insert = db.prepare(
-    "INSERT INTO categories (id, slug, title, description) VALUES (?, ?, ?, ?)"
+    "INSERT INTO categories (id, slug, title, description, requires_grind) VALUES (?, ?, ?, ?, ?)"
   );
-  const ids: Record<string, string> = {};
   for (const c of categories) {
-    const id = newId("cat");
-    insert.run(id, c.slug, c.title, c.description);
-    ids[c.slug] = id;
+    insert.run(newId("cat"), c.slug, c.title, c.description, c.requiresGrind);
   }
-  return ids;
+}
+
+function seedGrindTypes() {
+  const existing = db.prepare("SELECT COUNT(*) as n FROM grind_types").get() as { n: number };
+  if (existing.n > 0) return;
+
+  const types = ["دان کامل (بدون آسیاب)", "اسپرسو", "فرنچ‌پرس", "موکاپات", "فیلتر (V60 / کمکس)", "ترک (فوق‌ریز)"];
+  const insert = db.prepare("INSERT INTO grind_types (id, title, sort_order) VALUES (?, ?, ?)");
+  types.forEach((title, i) => insert.run(newId("grind"), title, i));
 }
 
 function seedProducts() {
-  const existing = db.prepare("SELECT COUNT(*) as n FROM products").get() as {
-    n: number;
-  };
+  const existing = db.prepare("SELECT COUNT(*) as n FROM products").get() as { n: number };
   if (existing.n > 0) return;
 
-  const categoryRows = db.prepare("SELECT id, slug FROM categories").all() as {
+  const categoryRows = db.prepare("SELECT id, slug FROM categories").all() as { id: string; slug: string }[];
+  const categoryIdBySlug = Object.fromEntries(categoryRows.map((c) => [c.slug, c.id]));
+
+  const grindRows = db.prepare("SELECT id, title FROM grind_types ORDER BY sort_order").all() as {
     id: string;
-    slug: string;
+    title: string;
   }[];
-  const categoryIdBySlug = Object.fromEntries(
-    categoryRows.map((c) => [c.slug, c.id])
+  const grindByTitle = Object.fromEntries(grindRows.map((g) => [g.title, g.id]));
+
+  const insertProduct = db.prepare(
+    `INSERT INTO products (id, slug, name, origin, description, published, category_id)
+     VALUES (?, ?, ?, ?, ?, 1, ?)`
+  );
+  const insertVariant = db.prepare(
+    `INSERT INTO product_variants (id, product_id, weight, grind_type_id, price) VALUES (?, ?, ?, ?, ?)`
   );
 
-  const products = [
-    { slug: "mehrdad-espresso-classic", name: "بلند اسپرسو کلاسیک", origin: "برزیل و اتیوپی", price: 385000, weight: "250", category: "coffee" },
-    { slug: "mehrdad-espresso-dark", name: "اسپرسو رست تیره", origin: "برزیل و هند", price: 620000, weight: "1000", category: "coffee" },
-    { slug: "mehrdad-espresso-decaf", name: "اسپرسو بدون کافئین", origin: "کلمبیا", price: 455000, weight: "250", category: "coffee" },
-    { slug: "mehrdad-espresso-blend-mild", name: "اسپرسو بلند ملایم", origin: "برزیل و کلمبیا", price: 275000, weight: "250", category: "coffee" },
-    { slug: "mehrdad-filter-yirgacheffe", name: "یرگاچف فیلتر", origin: "اتیوپی", price: 420000, weight: "250", category: "coffee" },
-    { slug: "mehrdad-filter-light", name: "فیلتر رست روشن", origin: "کنیا", price: 460000, weight: "250", category: "coffee" },
-    { slug: "mehrdad-filter-house", name: "فیلتر هاوس بلند", origin: "کلمبیا و اتیوپی", price: 560000, weight: "500", category: "coffee" },
-    { slug: "mehrdad-turkish-classic", name: "پودر ترک ممتاز", origin: "بلند اختصاصی مهرداد", price: 310000, weight: "250", category: "coffee" },
-    { slug: "mehrdad-turkish-cardamom", name: "پودر ترک با هل", origin: "بلند اختصاصی مهرداد", price: 340000, weight: "250", category: "coffee" },
-    { slug: "mehrdad-whole-bean-house", name: "بلند هاوس دان کامل", origin: "کلمبیا و هند", price: 350000, weight: "500", category: "coffee" },
-    { slug: "mehrdad-whole-bean-signature", name: "بلند سیگنیچر مهرداد", origin: "اتیوپی، برزیل و هند", price: 690000, weight: "1000", category: "coffee" },
-    { slug: "mehrdad-whole-bean-single-origin", name: "دان کامل تک‌خاستگاه گواتمالا", origin: "گواتمالا", price: 480000, weight: "500", category: "coffee" },
+  type SeedProduct = {
+    slug: string;
+    name: string;
+    origin: string;
+    category: string;
+    variants: { weight: string; grind?: string; price: number }[];
+  };
+
+  const products: SeedProduct[] = [
+    {
+      slug: "mehrdad-espresso-classic",
+      name: "بلند اسپرسو کلاسیک",
+      origin: "برزیل و اتیوپی",
+      category: "coffee",
+      variants: [
+        { weight: "250", grind: "اسپرسو", price: 385000 },
+        { weight: "250", grind: "دان کامل (بدون آسیاب)", price: 385000 },
+        { weight: "500", grind: "اسپرسو", price: 720000 },
+      ],
+    },
+    {
+      slug: "mehrdad-filter-yirgacheffe",
+      name: "یرگاچف فیلتر",
+      origin: "اتیوپی",
+      category: "coffee",
+      variants: [
+        { weight: "250", grind: "فیلتر (V60 / کمکس)", price: 420000 },
+        { weight: "250", grind: "دان کامل (بدون آسیاب)", price: 420000 },
+      ],
+    },
+    {
+      slug: "mehrdad-turkish-classic",
+      name: "پودر ترک ممتاز",
+      origin: "بلند اختصاصی مهرداد",
+      category: "coffee",
+      variants: [
+        { weight: "250", grind: "ترک (فوق‌ریز)", price: 310000 },
+        { weight: "500", grind: "ترک (فوق‌ریز)", price: 590000 },
+      ],
+    },
+    {
+      slug: "mehrdad-whole-bean-signature",
+      name: "بلند سیگنیچر مهرداد",
+      origin: "اتیوپی، برزیل و هند",
+      category: "coffee",
+      variants: [
+        { weight: "500", grind: "دان کامل (بدون آسیاب)", price: 690000 },
+        { weight: "1000", grind: "دان کامل (بدون آسیاب)", price: 1300000 },
+        { weight: "500", grind: "موکاپات", price: 690000 },
+      ],
+    },
+    {
+      slug: "mehrdad-nescafe-classic",
+      name: "نسکافه کلاسیک",
+      origin: "برزیل",
+      category: "nescafe",
+      variants: [
+        { weight: "250", price: 280000 },
+        { weight: "500", price: 520000 },
+      ],
+    },
+    {
+      slug: "mehrdad-nescafe-3in1",
+      name: "نسکافه ۳ در ۱",
+      origin: "ترکیب ویژه مهرداد",
+      category: "nescafe",
+      variants: [{ weight: "250", price: 260000 }],
+    },
+    {
+      slug: "mehrdad-hot-chocolate-classic",
+      name: "هات چاکلت کلاسیک",
+      origin: "کاکائوی بلژیک",
+      category: "hot-chocolate",
+      variants: [
+        { weight: "250", price: 300000 },
+        { weight: "500", price: 560000 },
+      ],
+    },
+    {
+      slug: "mehrdad-masala-chai",
+      name: "چای ماسالا اصیل",
+      origin: "ادویه‌جات هندی",
+      category: "masala-chai",
+      variants: [
+        { weight: "250", price: 290000 },
+        { weight: "500", price: 540000 },
+      ],
+    },
   ];
 
-  const insert = db.prepare(
-    `INSERT INTO products (id, slug, name, origin, price, weight, description, published, category_id)
-     VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)`
-  );
   for (const p of products) {
     const productId = newId("prod");
-    insert.run(
+    insertProduct.run(
       productId,
       p.slug,
       p.name,
       p.origin,
-      p.price,
-      p.weight,
-      `${p.name} با دانه‌های ${p.origin} تهیه و در کرمانشاه تازه برشته می‌شود.`,
+      `${p.name} با دانه‌ها و مواد اولیه‌ی ${p.origin} تهیه و در کرمانشاه تازه بسته‌بندی می‌شود.`,
       categoryIdBySlug[p.category]
     );
-    const grinds = db.prepare("SELECT id FROM grind_options ORDER BY created_at ASC").all() as { id: string }[];
-    if (p.category === "coffee") {
-      const addVariant = db.prepare("INSERT OR IGNORE INTO product_variants (id, product_id, weight, grind_option_id, price, active) VALUES (?, ?, ?, ?, ?, 1)");
-      for (const g of grinds) addVariant.run(newId("var"), productId, p.weight, g.id, p.price);
-    } else {
-      db.prepare("INSERT INTO product_variants (id, product_id, weight, grind_option_id, price, active) VALUES (?, ?, ?, NULL, ?, 1)").run(newId("var"), productId, p.weight, p.price);
+    for (const v of p.variants) {
+      insertVariant.run(
+        newId("var"),
+        productId,
+        v.weight,
+        v.grind ? grindByTitle[v.grind] ?? null : null,
+        v.price
+      );
     }
   }
 }
@@ -90,17 +170,18 @@ function seedAdmin() {
 
   const password = process.env.ADMIN_PASSWORD || "ChangeMe123!";
   const passwordHash = bcrypt.hashSync(password, 10);
-  db.prepare(
-    "INSERT INTO admins (id, email, password_hash, name) VALUES (?, ?, ?, ?)"
-  ).run(newId("admin"), email, passwordHash, "مدیر مهرداد");
+  db.prepare("INSERT INTO admins (id, email, password_hash, name) VALUES (?, ?, ?, ?)").run(
+    newId("admin"),
+    email,
+    passwordHash,
+    "مدیر مهرداد"
+  );
 
   console.log(`Admin seeded → email: ${email} / password: ${password}`);
 }
 
 function seedArticle() {
-  const existing = db.prepare("SELECT COUNT(*) as n FROM articles").get() as {
-    n: number;
-  };
+  const existing = db.prepare("SELECT COUNT(*) as n FROM articles").get() as { n: number };
   if (existing.n > 0) return;
 
   db.prepare(
@@ -117,6 +198,7 @@ function seedArticle() {
 
 function main() {
   seedCategories();
+  seedGrindTypes();
   seedProducts();
   seedAdmin();
   seedArticle();

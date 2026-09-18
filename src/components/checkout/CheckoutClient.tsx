@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCartStore, cartTotal } from "@/lib/cart-store";
+import Spinner from "@/components/Spinner";
 import { formatToman, weightLabel } from "@/lib/products";
 
 type Address = {
@@ -103,7 +104,7 @@ export default function CheckoutClient() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          items: items.map((i) => ({ productId: i.productId, variantId: i.variantId, quantity: i.quantity })),
+          items: items.map((i) => ({ variantId: i.variantId, quantity: i.quantity })),
           ...payload,
           saveAddress: selectedAddressId === "new" && saveAddress,
           addressTitle: addressTitle || "آدرس جدید",
@@ -273,9 +274,9 @@ export default function CheckoutClient() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full rounded-full bg-ink py-3.5 text-sm font-semibold text-cream hover:bg-coffee-deep transition-colors disabled:opacity-60"
+          className="w-full flex items-center justify-center gap-2 rounded-full bg-ink py-3.5 text-sm font-semibold text-cream hover:bg-coffee-deep transition-colors disabled:opacity-60"
         >
-          {submitting ? "در حال انتقال به درگاه..." : "پرداخت و ثبت سفارش"}
+          {submitting ? (<><Spinner className="h-4 w-4" /> در حال انتقال به درگاه...</>) : "پرداخت و ثبت سفارش"}
         </button>
       </form>
 
@@ -284,10 +285,13 @@ export default function CheckoutClient() {
         <h3 className="font-bold text-ink mb-4">خلاصه سفارش</h3>
         <ul className="space-y-3 text-sm">
           {items.map((item) => (
-            <li key={item.productId} className="flex justify-between text-ink-soft">
+            <li key={item.variantId} className="flex justify-between text-ink-soft">
               <span>
                 {item.name} × {item.quantity}
-                <span className="block text-xs">{weightLabel(item.weight)}{item.grind ? ` · ${item.grind}` : ""}</span>
+                <span className="block text-xs">
+                  {weightLabel(item.weight)}
+                  {item.grindTypeName ? ` · ${item.grindTypeName}` : ""}
+                </span>
               </span>
               <span className="text-ink">{formatToman(item.price * item.quantity)}</span>
             </li>

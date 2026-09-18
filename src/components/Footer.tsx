@@ -86,7 +86,7 @@ export default function Footer() {
           <ul className="mt-4 space-y-3 text-sm text-cream/60">
             <li className="flex items-start gap-2">
               <MapPin size={16} strokeWidth={1.75} className="mt-0.5 shrink-0" />
-              <span>کرمانشاه، بلوار مهدیه، ابتدای خیابان حاج محمد تقی اصفهانی، قهوه مهرداد</span>
+              <span>کرمانشاه، بلوار مهدیه، ابتدای خیابان حاج محمد تقی اصفهانی</span>
             </li>
             <li className="flex items-center gap-2">
               <Phone size={16} strokeWidth={1.75} className="shrink-0" />

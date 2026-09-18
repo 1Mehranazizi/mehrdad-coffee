@@ -1,21 +1,74 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
+import { ChevronLeft } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { SunburstMark } from "@/components/icons";
 import { getArticleBySlug, listPublishedArticles } from "@/server/repo/articles";
 
-export function generateStaticParams() { return listPublishedArticles().map(a=>({slug:a.slug})); }
+export function generateStaticParams() {
+  return listPublishedArticles().map((a) => ({ slug: a.slug }));
+}
 
-export default async function ArticlePage({ params }: { params: Promise<{slug:string}> }) {
-  const {slug}=await params; const article=getArticleBySlug(slug);
-  if(!article || !article.published) notFound();
-  return <><Header/><main className="flex-1"><article className="mx-auto max-w-3xl px-4 py-10 md:py-16">
-    <Link href="/journal" className="text-sm text-coffee">← بازگشت به مجله</Link>
-    <p className="mt-8 text-xs font-semibold tracking-[0.2em] text-coffee">MEHRDAD JOURNAL</p>
-    <h1 className="mt-2 text-3xl md:text-5xl font-extrabold leading-tight text-ink">{article.title}</h1>
-    {article.excerpt && <p className="mt-5 text-lg leading-8 text-ink-soft">{article.excerpt}</p>}
-    {article.coverImageUrl && <div className="relative mt-8 aspect-[16/9] overflow-hidden rounded-3xl"><Image src={article.coverImageUrl} alt="" fill className="object-cover"/></div>}
-    <div className="mt-10 whitespace-pre-line text-[15px] leading-9 text-ink">{article.content}</div>
-  </article></main><Footer/></>;
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const article = getArticleBySlug(slug);
+  if (!article) return {};
+  return { title: `${article.title} | مجله قهوه مهرداد`, description: article.excerpt ?? undefined };
+}
+
+function formatDate(iso: string) {
+  return new Intl.DateTimeFormat("fa-IR", { year: "numeric", month: "long", day: "numeric" }).format(
+    new Date(iso.replace(" ", "T") + "Z")
+  );
+}
+
+export default async function ArticlePage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const article = getArticleBySlug(slug);
+  if (!article || !article.published) notFound();
+
+  return (
+    <>
+      <Header />
+      <main className="flex-1">
+        <div className="mx-auto max-w-3xl px-4 pt-6">
+          <nav className="flex items-center gap-1.5 text-xs text-ink-soft">
+            <Link href="/" className="hover:text-coffee transition-colors">خانه</Link>
+            <ChevronLeft size={14} />
+            <Link href="/journal" className="hover:text-coffee transition-colors">مجله قهوه</Link>
+            <ChevronLeft size={14} />
+            <span className="text-ink">{article.title}</span>
+          </nav>
+        </div>
+
+        <article className="mx-auto max-w-3xl px-4 py-8">
+          <p className="text-xs text-ink-soft" dir="ltr">{formatDate(article.createdAt)}</p>
+          <h1 className="mt-2 text-3xl font-extrabold text-ink">{article.title}</h1>
+
+          <div className="relative mt-6 aspect-[16/9] rounded-2xl bg-ink flex items-center justify-center overflow-hidden">
+            {article.coverImageUrl ? (
+              <Image src={article.coverImageUrl} alt={article.title} fill className="object-cover" />
+            ) : (
+              <SunburstMark className="h-20 w-20 text-cream/90" />
+            )}
+          </div>
+
+          <div className="mt-8 space-y-4 text-[15px] leading-8 text-ink-soft whitespace-pre-line">
+            {article.content}
+          </div>
+        </article>
+      </main>
+      <Footer />
+    </>
+  );
 }

@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { getLatestUnconsumedOtp, markOtpConsumed } from "@/server/repo/otp";
 import { getOrCreateCustomerByPhone } from "@/server/repo/customers";
 import { createCustomerSessionToken, CUSTOMER_COOKIE } from "@/server/auth/customer";
+import { useSecureCookies } from "@/server/auth/cookie-names";
 
 const PHONE_REGEX = /^09\d{9}$/;
 
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
   const response = NextResponse.json({ ok: true });
   response.cookies.set(CUSTOMER_COOKIE, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: useSecureCookies(),
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 30,

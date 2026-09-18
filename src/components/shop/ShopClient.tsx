@@ -7,14 +7,19 @@ import type { Category } from "@/server/repo/categories";
 import type { ProductCardData } from "@/components/ProductCard";
 import ProductCard from "@/components/ProductCard";
 import FilterPanel from "@/components/shop/FilterPanel";
+import ProductCardSkeleton from "@/components/shop/ProductCardSkeleton";
+
+type ShopProduct = ProductCardData & { weights: string[] };
 
 type Props = {
-  products: ProductCardData[];
+  products: ShopProduct[];
   categories: Category[];
   priceMin: number;
   priceMax: number;
   initialCategory?: string;
 };
+
+const PAGE_SIZE = 9;
 
 export default function ShopClient({
   products,
@@ -32,6 +37,7 @@ export default function ShopClient({
   const [maxPrice, setMaxPrice] = useState<number>(priceMax);
   const [sortBy, setSortBy] = useState<SortOption>("default");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const toggleCategory = (slug: string) => {
     setSelectedCategories((prev) => {
@@ -39,6 +45,7 @@ export default function ShopClient({
       next.has(slug) ? next.delete(slug) : next.add(slug);
       return next;
     });
+    setVisibleCount(PAGE_SIZE);
   };
 
   const toggleWeight = (weight: Weight) => {
@@ -47,12 +54,14 @@ export default function ShopClient({
       next.has(weight) ? next.delete(weight) : next.add(weight);
       return next;
     });
+    setVisibleCount(PAGE_SIZE);
   };
 
   const resetFilters = () => {
     setSelectedCategories(new Set());
     setSelectedWeights(new Set());
     setMaxPrice(priceMax);
+    setVisibleCount(PAGE_SIZE);
   };
 
   const activeFilterCount =
@@ -60,23 +69,26 @@ export default function ShopClient({
     selectedWeights.size +
     (maxPrice < priceMax ? 1 : 0);
 
-  const visibleProducts = useMemo(() => {
+  const filteredProducts = useMemo(() => {
     const filtered = products.filter((p) => {
       if (selectedCategories.size > 0 && !selectedCategories.has(p.categorySlug ?? ""))
         return false;
-      if (selectedWeights.size > 0 && !selectedWeights.has(p.weight as Weight))
+      if (
+        selectedWeights.size > 0 &&
+        !p.weights.some((w) => selectedWeights.has(w as Weight))
+      )
         return false;
-      if (p.price > maxPrice) return false;
+      if (p.minPrice > maxPrice) return false;
       return true;
     });
 
     const sorted = [...filtered];
     switch (sortBy) {
       case "price-asc":
-        sorted.sort((a, b) => a.price - b.price);
+        sorted.sort((a, b) => a.minPrice - b.minPrice);
         break;
       case "price-desc":
-        sorted.sort((a, b) => b.price - a.price);
+        sorted.sort((a, b) => b.minPrice - a.minPrice);
         break;
       case "name":
         sorted.sort((a, b) => a.name.localeCompare(b.name, "fa"));
@@ -87,19 +99,26 @@ export default function ShopClient({
     return sorted;
   }, [products, selectedCategories, selectedWeights, maxPrice, sortBy]);
 
-  const [page, setPage] = useState(1);
+  const visibleProducts = filteredProducts.slice(0, visibleCount);
+  const hasMore = visibleCount < filteredProducts.length;
+
+  // infinite scroll: reveal more items as the sentinel enters the viewport
   const sentinelRef = useRef<HTMLDivElement | null>(null);
-  useEffect(() => { setPage(1); }, [selectedCategories, selectedWeights, maxPrice, sortBy]);
   useEffect(() => {
-    const node = sentinelRef.current;
-    if (!node) return;
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0]?.isIntersecting) setPage((p) => Math.min(p + 1, Math.ceil(visibleProducts.length / 9)));
-    }, { rootMargin: "300px" });
-    observer.observe(node);
+    if (!hasMore) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setVisibleCount((v) => v + PAGE_SIZE);
+        }
+      },
+      { rootMargin: "400px" }
+    );
+    observer.observe(el);
     return () => observer.disconnect();
-  }, [visibleProducts.length]);
-  const shownProducts = visibleProducts.slice(0, page * 9);
+  }, [hasMore]);
 
   const filterPanelProps = {
     categories,
@@ -108,7 +127,10 @@ export default function ShopClient({
     selectedWeights,
     onToggleWeight: toggleWeight,
     maxPrice,
-    onMaxPriceChange: setMaxPrice,
+    onMaxPriceChange: (v: number) => {
+      setMaxPrice(v);
+      setVisibleCount(PAGE_SIZE);
+    },
     priceMin,
     priceMax,
     onReset: resetFilters,
@@ -136,7 +158,7 @@ export default function ShopClient({
           </button>
 
           <p className="text-sm text-ink-soft hidden md:block">
-            {visibleProducts.length} محصول
+            {filteredProducts.length} محصول
           </p>
 
           <div className="flex items-center gap-2 mr-auto">
@@ -159,21 +181,21 @@ export default function ShopClient({
         </div>
 
         <p className="text-sm text-ink-soft mb-6 md:hidden">
-          {visibleProducts.length} محصول
+          {filteredProducts.length} محصول
         </p>
 
         {visibleProducts.length > 0 ? (
           <>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {shownProducts.map((product) => (
+              {visibleProducts.map((product) => (
                 <ProductCard key={product.slug} product={product} />
               ))}
+              {hasMore &&
+                Array.from({ length: Math.min(3, filteredProducts.length - visibleCount) }).map(
+                  (_, i) => <ProductCardSkeleton key={`skeleton-${i}`} />
+                )}
             </div>
-            {shownProducts.length < visibleProducts.length && (
-              <div ref={sentinelRef} className="py-10 flex justify-center">
-                <div className="h-8 w-8 rounded-full border-2 border-line border-t-coffee animate-spin" aria-label="در حال بارگذاری" />
-              </div>
-            )}
+            {hasMore && <div ref={sentinelRef} className="h-1" />}
           </>
         ) : (
           <div className="rounded-2xl border border-dashed border-line py-20 text-center text-ink-soft">
@@ -210,7 +232,7 @@ export default function ShopClient({
               onClick={() => setMobileFiltersOpen(false)}
               className="mt-4 w-full rounded-full bg-ink py-3 text-sm font-semibold text-cream"
             >
-              نمایش {visibleProducts.length} محصول
+              نمایش {Math.min(visibleCount, filteredProducts.length)} از {filteredProducts.length} محصول
             </button>
           </div>
         </div>

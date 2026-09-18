@@ -42,7 +42,14 @@ CREATE TABLE IF NOT EXISTS categories (
   id TEXT PRIMARY KEY,
   slug TEXT UNIQUE NOT NULL,
   title TEXT NOT NULL,
-  description TEXT
+  description TEXT,
+  requires_grind INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS grind_types (
+  id TEXT PRIMARY KEY,
+  title TEXT UNIQUE NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS products (
@@ -50,8 +57,6 @@ CREATE TABLE IF NOT EXISTS products (
   slug TEXT UNIQUE NOT NULL,
   name TEXT NOT NULL,
   origin TEXT NOT NULL,
-  price INTEGER NOT NULL,
-  weight TEXT NOT NULL,
   image_url TEXT,
   description TEXT,
   published INTEGER NOT NULL DEFAULT 1,
@@ -59,24 +64,14 @@ CREATE TABLE IF NOT EXISTS products (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
-CREATE TABLE IF NOT EXISTS grind_options (
-  id TEXT PRIMARY KEY,
-  slug TEXT UNIQUE NOT NULL,
-  title TEXT NOT NULL,
-  created_at TEXT NOT NULL DEFAULT (datetime('now'))
-);
-
 CREATE TABLE IF NOT EXISTS product_variants (
   id TEXT PRIMARY KEY,
   product_id TEXT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
   weight TEXT NOT NULL,
-  grind_option_id TEXT REFERENCES grind_options(id) ON DELETE SET NULL,
-  price INTEGER NOT NULL,
-  active INTEGER NOT NULL DEFAULT 1,
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  UNIQUE(product_id, weight, grind_option_id)
+  grind_type_id TEXT REFERENCES grind_types(id),
+  price INTEGER NOT NULL
 );
-CREATE INDEX IF NOT EXISTS idx_product_variants_product ON product_variants(product_id);
+CREATE INDEX IF NOT EXISTS idx_variants_product ON product_variants(product_id);
 
 CREATE TABLE IF NOT EXISTS orders (
   id TEXT PRIMARY KEY,
@@ -104,9 +99,12 @@ CREATE TABLE IF NOT EXISTS order_items (
   id TEXT PRIMARY KEY,
   order_id TEXT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
   product_id TEXT NOT NULL REFERENCES products(id),
+  variant_id TEXT,
+
+  -- snapshots, so later product/variant edits don't change historical orders
   product_name TEXT NOT NULL,
   weight TEXT NOT NULL,
-  grind TEXT,
+  grind_type_name TEXT,
   unit_price INTEGER NOT NULL,
   quantity INTEGER NOT NULL
 );

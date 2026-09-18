@@ -1,6 +1,6 @@
 import { db } from "@/server/db/client";
 import { newId } from "@/server/db/ids";
-import { getProductById, getProductVariant } from "@/server/repo/products";
+import { getVariantById, getProductById } from "@/server/repo/products";
 
 export type OrderStatus =
   | "PENDING_PAYMENT"
@@ -14,9 +14,10 @@ export type OrderItem = {
   id: string;
   orderId: string;
   productId: string;
+  variantId: string | null;
   productName: string;
   weight: string;
-  grind: string | null;
+  grindTypeName: string | null;
   unitPrice: number;
   quantity: number;
 };
@@ -68,9 +69,10 @@ type OrderItemRow = {
   id: string;
   order_id: string;
   product_id: string;
+  variant_id: string | null;
   product_name: string;
   weight: string;
-  grind: string | null;
+  grind_type_name: string | null;
   unit_price: number;
   quantity: number;
 };
@@ -80,9 +82,10 @@ function mapItem(row: OrderItemRow): OrderItem {
     id: row.id,
     orderId: row.order_id,
     productId: row.product_id,
+    variantId: row.variant_id,
     productName: row.product_name,
     weight: row.weight,
-    grind: row.grind,
+    grindTypeName: row.grind_type_name,
     unitPrice: row.unit_price,
     quantity: row.quantity,
   };
@@ -164,7 +167,7 @@ const FREE_SHIPPING_THRESHOLD = 1500000;
 
 export type CreateOrderInput = {
   customerId: string;
-  items: { productId: string; variantId?: string; quantity: number }[];
+  items: { variantId: string; quantity: number }[];
   receiverName: string;
   receiverPhone: string;
   province: string;
@@ -179,24 +182,17 @@ export function createOrderFromCart(
   if (input.items.length === 0) return { error: "سبد خرید خالی است" };
 
   const resolvedItems = input.items.map((item) => {
-    const product = getProductById(item.productId);
-    const variant = item.variantId ? getProductVariant(item.variantId) : undefined;
-    if (!product || !product.published || (variant && (variant.productId !== product.id || !variant.active))) return null;
-    const selected = variant ?? {
-      id: `legacy_${product.id}`,
-      productId: product.id,
-      weight: product.weight,
-      grindOptionId: null,
-      grind: null,
-      price: product.price,
-      active: true,
-    };
+    const variant = getVariantById(item.variantId);
+    if (!variant) return null;
+    const product = getProductById(variant.productId);
+    if (!product || !product.published) return null;
     return {
       productId: product.id,
+      variantId: variant.id,
       productName: product.name,
-      weight: selected.weight,
-      grind: selected.grind,
-      unitPrice: selected.price,
+      weight: variant.weight,
+      grindTypeName: variant.grindTypeName,
+      unitPrice: variant.price,
       quantity: Math.max(1, Math.min(20, item.quantity)),
     };
   });
@@ -218,8 +214,8 @@ export function createOrderFromCart(
      VALUES (?, ?, 'PENDING_PAYMENT', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   );
   const insertItem = db.prepare(
-    `INSERT INTO order_items (id, order_id, product_id, product_name, weight, grind, unit_price, quantity)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO order_items (id, order_id, product_id, variant_id, product_name, weight, grind_type_name, unit_price, quantity)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
   );
 
   const tx = db.transaction(() => {
@@ -242,9 +238,10 @@ export function createOrderFromCart(
         newId("item"),
         orderId,
         item.productId,
+        item.variantId,
         item.productName,
         item.weight,
-        item.grind,
+        item.grindTypeName,
         item.unitPrice,
         item.quantity
       );

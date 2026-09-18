@@ -27,7 +27,7 @@ export default async function AdminOrderDetailPage({
             <div>
               <p className="font-medium text-ink">{item.productName}</p>
               <p className="text-xs text-ink-soft">
-                {weightLabel(item.weight)}{item.grind ? ` · ${item.grind}` : ""} × {item.quantity}
+                {weightLabel(item.weight)} × {item.quantity}
               </p>
             </div>
             <p className="text-ink">{formatToman(item.unitPrice * item.quantity)}</p>

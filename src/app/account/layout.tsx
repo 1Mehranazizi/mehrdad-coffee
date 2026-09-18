@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import LogoutButton from "@/components/auth/LogoutButton";
@@ -17,7 +16,6 @@ export default async function AccountLayout({
   children: React.ReactNode;
 }) {
   const customer = await getCurrentCustomer();
-  if (!customer) redirect("/login?next=/account");
 
   return (
     <>

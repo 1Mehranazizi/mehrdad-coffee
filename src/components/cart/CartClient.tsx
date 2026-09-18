@@ -48,7 +48,9 @@ export default function CartClient() {
                 {item.name}
               </Link>
               <p className="mt-1 text-xs text-ink-soft">
-                {weightLabel(item.weight)}{item.grind ? ` · ${item.grind}` : ""} · {formatToman(item.price)}
+                {weightLabel(item.weight)}
+                {item.grindTypeName ? ` · ${item.grindTypeName}` : ""} ·{" "}
+                {formatToman(item.price)}
               </p>
             </div>
 

@@ -3,7 +3,7 @@ import Image from "next/image";
 import { Pencil, Plus } from "lucide-react";
 import { getAllProductsForAdmin } from "@/server/repo/products";
 import { listCategories } from "@/server/repo/categories";
-import { formatToman, weightLabel } from "@/lib/products";
+import { formatToman } from "@/lib/products";
 import DeleteButton from "@/components/admin/DeleteButton";
 
 export default function AdminProductsPage() {
@@ -53,12 +53,16 @@ export default function AdminProductsPage() {
                     )}
                     <div>
                       <p className="font-medium text-ink">{p.name}</p>
-                      <p className="text-xs text-ink-soft">{weightLabel(p.weight)}</p>
+                      <p className="text-xs text-ink-soft">
+                        {p.variants.length} گزینه
+                      </p>
                     </div>
                   </div>
                 </td>
                 <td className="p-3 text-ink-soft">{categoryTitle.get(p.categoryId)}</td>
-                <td className="p-3 text-ink">{formatToman(p.price)}</td>
+                <td className="p-3 text-ink">
+                  از {formatToman(p.minPrice)}
+                </td>
                 <td className="p-3">
                   <span
                     className={`rounded-full px-2.5 py-1 text-xs ${
