@@ -27,7 +27,7 @@ export default function Header() {
       {/* announcement strip */}
       <div className="bg-ink text-cream text-xs sm:text-sm">
         <p className="mx-auto max-w-6xl px-4 py-2 text-center">
-          ارسال به سراسر ایران · برای خریدهای بالای ۵۰۰ هزار تومان، ارسال رایگان
+          🚚 ارسال رایگان در کرمانشاه | تحویل در همان روز ⚡
         </p>
       </div>
 
@@ -38,17 +38,10 @@ export default function Header() {
             <Image
               src="/images/logo.png"
               alt="قهوه مهرداد"
-              width={40}
-              height={40}
-              className="h-10 w-10 object-contain"
-              priority
+              width={96}
+              height={96}
+              className="object-contain"
             />
-            <span className="hidden sm:flex flex-col leading-tight">
-              <span className="text-lg font-extrabold text-ink">مهرداد</span>
-              <span className="text-[10px] tracking-[0.2em] text-ink-soft">
-                MEHRDAD COFFEE
-              </span>
-            </span>
           </Link>
 
           {/* nav */}

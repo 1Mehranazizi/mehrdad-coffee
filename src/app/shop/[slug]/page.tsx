@@ -15,7 +15,10 @@ import {
   listProducts,
 } from "@/server/repo/products";
 import { getCategoryById } from "@/server/repo/categories";
-import { listApprovedReviewsForProduct, hasCustomerReviewedProduct } from "@/server/repo/reviews";
+import {
+  listApprovedReviewsForProduct,
+  hasCustomerReviewedProduct,
+} from "@/server/repo/reviews";
 import { hasCustomerPurchasedProduct } from "@/server/repo/customers";
 import { getCurrentCustomer } from "@/server/auth/customer";
 import { brewingTips, weightLabel } from "@/lib/products";
@@ -56,7 +59,8 @@ export default async function ProductPage({
       : null;
 
   const customer = await getCurrentCustomer();
-  let reviewStatus: "can-review" | "not-logged-in" | "not-purchased" | "already-reviewed" =
+  let reviewStatus:
+    "can-review" | "not-logged-in" | "not-purchased" | "already-reviewed" =
     "not-logged-in";
   if (customer) {
     if (hasCustomerReviewedProduct(customer.id, product.id)) {
@@ -119,7 +123,9 @@ export default async function ProductPage({
             {avgRating !== null && (
               <div className="mt-3 flex items-center gap-1.5 text-sm text-ink-soft">
                 <Star size={16} className="fill-brass text-brass" />
-                <span className="text-ink font-medium">{avgRating.toFixed(1)}</span>
+                <span className="text-ink font-medium">
+                  {avgRating.toFixed(1)}
+                </span>
                 <span>({reviews.length} نظر)</span>
               </div>
             )}
@@ -131,7 +137,11 @@ export default async function ProductPage({
 
             <div className="mt-7">
               <VariantSelector
-                product={{ id: product.id, slug: product.slug, name: product.name }}
+                product={{
+                  id: product.id,
+                  slug: product.slug,
+                  name: product.name,
+                }}
                 variants={product.variants}
                 requiresGrind={category?.requiresGrind ?? false}
               />
@@ -163,7 +173,9 @@ export default async function ProductPage({
                         <li>خاستگاه: {product.origin}</li>
                         <li>
                           وزن‌های موجود:{" "}
-                          {Array.from(new Set(product.variants.map((v) => v.weight)))
+                          {Array.from(
+                            new Set(product.variants.map((v) => v.weight))
+                          )
                             .map((w) => weightLabel(w))
                             .join("، ")}
                         </li>
@@ -172,7 +184,9 @@ export default async function ProductPage({
                   },
                   {
                     title: "نحوه‌ی دم‌آوری پیشنهادی",
-                    content: <p>{category ? brewingTips[category.slug] : ""}</p>,
+                    content: (
+                      <p>{category ? brewingTips[category.slug] : ""}</p>
+                    ),
                   },
                 ]}
               />
@@ -187,7 +201,10 @@ export default async function ProductPage({
           {reviews.length > 0 ? (
             <ul className="mt-6 space-y-5">
               {reviews.map((review) => (
-                <li key={review.id} className="rounded-2xl border border-line bg-cream p-5">
+                <li
+                  key={review.id}
+                  className="rounded-2xl border border-line bg-cream p-5"
+                >
                   <div className="flex items-center justify-between">
                     <span className="font-semibold text-ink">
                       {review.customerName || "مشتری مهرداد"}
@@ -198,7 +215,9 @@ export default async function ProductPage({
                           key={i}
                           size={14}
                           className={
-                            i < review.rating ? "fill-brass text-brass" : "text-line"
+                            i < review.rating
+                              ? "fill-brass text-brass"
+                              : "text-line"
                           }
                         />
                       ))}

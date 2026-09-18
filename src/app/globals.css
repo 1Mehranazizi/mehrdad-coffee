@@ -1,5 +1,58 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "IRANYekan";
+  src: url("../fonts/IranYekan/IRANYekanWebThin.woff2") format("woff2");
+  font-weight: 100;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "IRANYekan";
+  src: url("../fonts/IranYekan/IRANYekanWebLight.woff2") format("woff2");
+  font-weight: 300;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "IRANYekan";
+  src: url("../fonts/IranYekan/IRANYekanWebRegular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "IRANYekan";
+  src: url("../fonts/IranYekan/IRANYekanWebMedium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "IRANYekan";
+  src: url("../fonts/IranYekan/IRANYekanWebBold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "IRANYekan";
+  src: url("../fonts/IranYekan/IRANYekanWebExtraBold.woff2")
+    format("woff2");
+  font-weight: 800;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "IRANYekan";
+  src: url("../fonts/IranYekan/IRANYekanWebExtraBlack.woff2")
+    format("woff2");
+  font-weight: 900;
+  font-style: normal;
+}
+
+
+
 @theme inline {
   /* Brand palette — drawn from the Mehrdad Coffee packaging:
      kraft-paper cream, deep roasted ink, coffee brown, muted brass accent. */
@@ -13,7 +66,7 @@
   --color-line: #d9cfba;
   --color-cream: #fbf8f1;
 
-  --font-sans: var(--font-vazirmatn);
+  --font-sans: var(--font-iranyekan);
 
   --animate-marquee: marquee 32s linear infinite;
 }
@@ -34,6 +87,7 @@ html {
 body {
   background: var(--color-paper);
   color: var(--color-ink);
+  font-family: "IRANYekan";
 }
 
 ::selection {
