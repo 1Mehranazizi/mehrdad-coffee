@@ -1,5 +1,6 @@
 import { db } from "@/server/db/client";
 import { newId } from "@/server/db/ids";
+import { buildPaged, likePattern, type Paged } from "@/lib/pagination";
 
 export type Article = {
   id: string;
@@ -41,6 +42,59 @@ export function listPublishedArticles(): Article[] {
     .prepare("SELECT * FROM articles WHERE published = 1 ORDER BY created_at DESC")
     .all() as ArticleRow[];
   return rows.map(mapRow);
+}
+
+export function queryPublishedArticles(filters: {
+  q?: string;
+  page: number;
+  perPage: number;
+}): Paged<Article> {
+  return queryArticles({ ...filters, status: "published" });
+}
+
+export function queryArticlesForAdmin(filters: {
+  q?: string;
+  status?: "published" | "draft";
+  page: number;
+  perPage: number;
+}): Paged<Article> {
+  return queryArticles(filters);
+}
+
+function queryArticles(filters: {
+  q?: string;
+  status?: "published" | "draft";
+  page: number;
+  perPage: number;
+}): Paged<Article> {
+  const conditions: string[] = [];
+  const params: (string | number)[] = [];
+
+  if (filters.q) {
+    const like = likePattern(filters.q);
+    conditions.push(
+      "(title LIKE ? ESCAPE '\\' OR slug LIKE ? ESCAPE '\\' OR excerpt LIKE ? ESCAPE '\\')"
+    );
+    params.push(like, like, like);
+  }
+  if (filters.status) {
+    conditions.push("published = ?");
+    params.push(filters.status === "published" ? 1 : 0);
+  }
+  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+
+  const { total } = db
+    .prepare(`SELECT COUNT(*) as total FROM articles ${where}`)
+    .get(...params) as { total: number };
+  const paged = buildPaged<Article>([], total, filters.page, filters.perPage);
+
+  const rows = db
+    .prepare(
+      `SELECT * FROM articles ${where} ORDER BY created_at DESC, rowid DESC LIMIT ? OFFSET ?`
+    )
+    .all(...params, filters.perPage, (paged.page - 1) * filters.perPage) as ArticleRow[];
+  paged.items = rows.map(mapRow);
+  return paged;
 }
 
 export function listAllArticlesForAdmin(): Article[] {

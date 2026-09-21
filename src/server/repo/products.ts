@@ -1,5 +1,6 @@
 import { db } from "@/server/db/client";
 import { newId } from "@/server/db/ids";
+import { buildPaged, likePattern, type Paged } from "@/lib/pagination";
 
 export type ProductVariant = {
   id: string;
@@ -168,6 +169,49 @@ export function listProducts(filters: ProductFilters = {}): ProductWithVariants[
 export function getAllProductsForAdmin(): ProductWithVariants[] {
   const rows = db.prepare("SELECT * FROM products ORDER BY created_at DESC").all() as ProductRow[];
   return rows.map((row) => withVariants(mapRow(row)));
+}
+
+export function queryProductsForAdmin(filters: {
+  q?: string;
+  categoryId?: string;
+  status?: "published" | "draft";
+  page: number;
+  perPage: number;
+}): Paged<ProductWithVariants> {
+  const conditions: string[] = [];
+  const params: (string | number)[] = [];
+
+  if (filters.q) {
+    conditions.push("(p.name LIKE ? ESCAPE '\\' OR p.origin LIKE ? ESCAPE '\\' OR p.slug LIKE ? ESCAPE '\\')");
+    const like = likePattern(filters.q);
+    params.push(like, like, like);
+  }
+  if (filters.categoryId) {
+    conditions.push("p.category_id = ?");
+    params.push(filters.categoryId);
+  }
+  if (filters.status) {
+    conditions.push("p.published = ?");
+    params.push(filters.status === "published" ? 1 : 0);
+  }
+  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+
+  const { total } = db
+    .prepare(`SELECT COUNT(*) as total FROM products p ${where}`)
+    .get(...params) as { total: number };
+  const paged = buildPaged<ProductWithVariants>([], total, filters.page, filters.perPage);
+
+  const rows = db
+    .prepare(
+      `SELECT p.* FROM products p ${where} ORDER BY p.created_at DESC, p.rowid DESC LIMIT ? OFFSET ?`
+    )
+    .all(...params, filters.perPage, (paged.page - 1) * filters.perPage) as ProductRow[];
+  paged.items = rows.map((row) => withVariants(mapRow(row)));
+  return paged;
+}
+
+export function countProducts(): number {
+  return (db.prepare("SELECT COUNT(*) as n FROM products").get() as { n: number }).n;
 }
 
 export function getProductBySlug(slug: string): ProductWithVariants | undefined {

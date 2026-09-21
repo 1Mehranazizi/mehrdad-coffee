@@ -1,20 +1,31 @@
 import Link from "next/link";
 import Image from "next/image";
+import { Search } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import Pagination from "@/components/Pagination";
 import { SunburstMark } from "@/components/icons";
-import { listPublishedArticles } from "@/server/repo/articles";
+import { queryPublishedArticles } from "@/server/repo/articles";
+import { formatDate } from "@/lib/format-date";
+import { firstParam } from "@/lib/pagination";
 
 export const metadata = { title: "مجله قهوه | قهوه مهرداد" };
 
-function formatDate(iso: string) {
-  return new Intl.DateTimeFormat("fa-IR", { year: "numeric", month: "long", day: "numeric" }).format(
-    new Date(iso.replace(" ", "T") + "Z")
-  );
-}
+const PAGE_SIZE = 9;
 
-export default function JournalPage() {
-  const articles = listPublishedArticles();
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+export default async function JournalPage({ searchParams }: { searchParams: SearchParams }) {
+  const sp = await searchParams;
+  const q = firstParam(sp.q);
+  const pageNum = Math.floor(Number(firstParam(sp.page)));
+  const requestedPage = Number.isFinite(pageNum) && pageNum > 0 ? pageNum : 1;
+
+  const { items: articles, ...paging } = queryPublishedArticles({
+    q,
+    page: requestedPage,
+    perPage: PAGE_SIZE,
+  });
 
   return (
     <>
@@ -26,6 +37,21 @@ export default function JournalPage() {
             <p className="mt-2 text-ink-soft">
               نکته‌ها، داستان‌ها و راهنماهایی درباره‌ی قهوه و دم‌آوری آن.
             </p>
+
+            <form action="/journal" className="relative mt-6 mx-auto md:mx-0 max-w-md">
+              <Search
+                size={16}
+                className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-ink-soft"
+              />
+              <input
+                type="search"
+                name="q"
+                defaultValue={q}
+                placeholder="جستجو در مقالات…"
+                aria-label="جستجو در مقالات"
+                className="w-full rounded-full border border-line bg-cream py-2.5 pr-11 pl-4 text-sm text-ink placeholder:text-ink-soft/70 focus:border-coffee"
+              />
+            </form>
           </div>
         </div>
 
@@ -51,9 +77,7 @@ export default function JournalPage() {
                     )}
                   </div>
                   <div className="p-5">
-                    <p className="text-xs text-ink-soft" dir="ltr">
-                      {formatDate(a.createdAt)}
-                    </p>
+                    <p className="text-xs text-ink-soft">{formatDate(a.createdAt)}</p>
                     <h2 className="mt-1.5 font-bold text-ink group-hover:text-coffee transition-colors">
                       {a.title}
                     </h2>
@@ -67,8 +91,25 @@ export default function JournalPage() {
               ))}
             </div>
           ) : (
-            <p className="text-center text-ink-soft py-20">هنوز مقاله‌ای منتشر نشده است.</p>
+            <div className="py-20 text-center text-ink-soft">
+              <p>{q ? "مقاله‌ای با این جستجو پیدا نشد." : "هنوز مقاله‌ای منتشر نشده است."}</p>
+              {q && (
+                <Link href="/journal" className="mt-4 inline-block text-sm text-coffee hover:text-coffee-deep">
+                  نمایش همه مقالات
+                </Link>
+              )}
+            </div>
           )}
+
+          <Pagination
+            basePath="/journal"
+            params={q ? { q } : {}}
+            page={paging.page}
+            perPage={PAGE_SIZE}
+            total={paging.total}
+            totalPages={paging.totalPages}
+            defaultPerPage={PAGE_SIZE}
+          />
         </div>
       </main>
       <Footer />

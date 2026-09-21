@@ -1,5 +1,6 @@
 import { db } from "@/server/db/client";
 import { newId } from "@/server/db/ids";
+import { buildPaged, likePattern, type Paged } from "@/lib/pagination";
 
 export type Review = {
   id: string;
@@ -61,6 +62,66 @@ export function listReviewsForAdmin(onlyPending = false): (Review & {
     )
     .all() as (ReviewRow & { product_name: string })[];
   return rows.map((row) => ({ ...mapRow(row), productName: row.product_name }));
+}
+
+export function queryReviewsForAdmin(filters: {
+  q?: string;
+  status?: "pending" | "approved";
+  rating?: number;
+  page: number;
+  perPage: number;
+}): Paged<Review & { productName: string }> {
+  const conditions: string[] = [];
+  const params: (string | number)[] = [];
+
+  if (filters.status) {
+    conditions.push("r.approved = ?");
+    params.push(filters.status === "approved" ? 1 : 0);
+  }
+  if (filters.rating) {
+    conditions.push("r.rating = ?");
+    params.push(filters.rating);
+  }
+  if (filters.q) {
+    const like = likePattern(filters.q);
+    conditions.push(
+      "(r.comment LIKE ? ESCAPE '\\' OR p.name LIKE ? ESCAPE '\\' OR c.name LIKE ? ESCAPE '\\' OR c.phone LIKE ? ESCAPE '\\')"
+    );
+    params.push(like, like, like, like);
+  }
+  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+  const from = `FROM reviews r
+       JOIN customers c ON c.id = r.customer_id
+       JOIN products p ON p.id = r.product_id`;
+
+  const { total } = db
+    .prepare(`SELECT COUNT(*) as total ${from} ${where}`)
+    .get(...params) as { total: number };
+  const paged = buildPaged<Review & { productName: string }>(
+    [],
+    total,
+    filters.page,
+    filters.perPage
+  );
+
+  const rows = db
+    .prepare(
+      `SELECT r.*, c.name as customer_name, p.name as product_name ${from} ${where}
+       ORDER BY r.approved ASC, r.created_at DESC, r.rowid DESC LIMIT ? OFFSET ?`
+    )
+    .all(...params, filters.perPage, (paged.page - 1) * filters.perPage) as (ReviewRow & {
+    product_name: string;
+  })[];
+  paged.items = rows.map((row) => ({ ...mapRow(row), productName: row.product_name }));
+  return paged;
+}
+
+export function countPendingReviews(): number {
+  return (
+    db.prepare("SELECT COUNT(*) as n FROM reviews WHERE approved = 0").get() as {
+      n: number;
+    }
+  ).n;
 }
 
 export function hasCustomerReviewedProduct(

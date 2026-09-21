@@ -5,11 +5,8 @@ import { ChevronLeft } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { SunburstMark } from "@/components/icons";
-import { getArticleBySlug, listPublishedArticles } from "@/server/repo/articles";
-
-export function generateStaticParams() {
-  return listPublishedArticles().map((a) => ({ slug: a.slug }));
-}
+import { getArticleBySlug } from "@/server/repo/articles";
+import { formatDate } from "@/lib/format-date";
 
 export async function generateMetadata({
   params,
@@ -20,12 +17,6 @@ export async function generateMetadata({
   const article = getArticleBySlug(slug);
   if (!article) return {};
   return { title: `${article.title} | مجله قهوه مهرداد`, description: article.excerpt ?? undefined };
-}
-
-function formatDate(iso: string) {
-  return new Intl.DateTimeFormat("fa-IR", { year: "numeric", month: "long", day: "numeric" }).format(
-    new Date(iso.replace(" ", "T") + "Z")
-  );
 }
 
 export default async function ArticlePage({
@@ -52,7 +43,7 @@ export default async function ArticlePage({
         </div>
 
         <article className="mx-auto max-w-3xl px-4 py-8">
-          <p className="text-xs text-ink-soft" dir="ltr">{formatDate(article.createdAt)}</p>
+          <p className="text-xs text-ink-soft">{formatDate(article.createdAt)}</p>
           <h1 className="mt-2 text-3xl font-extrabold text-ink">{article.title}</h1>
 
           <div className="relative mt-6 aspect-[16/9] rounded-2xl bg-ink flex items-center justify-center overflow-hidden">

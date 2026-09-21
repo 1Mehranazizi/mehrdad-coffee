@@ -1,6 +1,12 @@
 import { db } from "@/server/db/client";
 import { newId } from "@/server/db/ids";
 import { getVariantById, getProductById } from "@/server/repo/products";
+import {
+  buildPaged,
+  likePattern,
+  normalizeDigits,
+  type Paged,
+} from "@/lib/pagination";
 
 export type OrderStatus =
   | "PENDING_PAYMENT"
@@ -154,6 +160,125 @@ export function listOrdersForAdmin(status?: OrderStatus): Order[] {
         .all(status) as OrderRow[])
     : (db.prepare("SELECT * FROM orders ORDER BY created_at DESC").all() as OrderRow[]);
   return rows.map((row) => mapOrder(row, getItemsForOrder(row.id)));
+}
+
+export type AdminOrderRow = Omit<Order, "items"> & {
+  itemCount: number;
+  customerName: string | null;
+  customerPhone: string | null;
+};
+
+const ORDER_STATUS_VALUES: OrderStatus[] = [
+  "PENDING_PAYMENT",
+  "PAID",
+  "PROCESSING",
+  "SHIPPED",
+  "DELIVERED",
+  "CANCELED",
+];
+
+export function isOrderStatus(value: unknown): value is OrderStatus {
+  return ORDER_STATUS_VALUES.includes(value as OrderStatus);
+}
+
+export function queryOrdersForAdmin(filters: {
+  q?: string;
+  status?: OrderStatus;
+  page: number;
+  perPage: number;
+}): Paged<AdminOrderRow> {
+  const conditions: string[] = [];
+  const params: (string | number)[] = [];
+
+  if (filters.status) {
+    conditions.push("o.status = ?");
+    params.push(filters.status);
+  }
+  const q = normalizeDigits(filters.q?.trim() ?? "");
+  if (q) {
+    const like = likePattern(q);
+    conditions.push(
+      `(o.order_number LIKE ? ESCAPE '\\' OR o.receiver_name LIKE ? ESCAPE '\\' OR o.receiver_phone LIKE ? ESCAPE '\\'
+        OR c.phone LIKE ? ESCAPE '\\' OR c.name LIKE ? ESCAPE '\\')`
+    );
+    params.push(like, like, like, like, like);
+  }
+  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+
+  const { total } = db
+    .prepare(
+      `SELECT COUNT(*) as total FROM orders o JOIN customers c ON c.id = o.customer_id ${where}`
+    )
+    .get(...params) as { total: number };
+  const paged = buildPaged<AdminOrderRow>([], total, filters.page, filters.perPage);
+
+  const rows = db
+    .prepare(
+      `SELECT o.*, c.name as customer_name, c.phone as customer_phone,
+              (SELECT COALESCE(SUM(quantity), 0) FROM order_items i WHERE i.order_id = o.id) as item_count
+       FROM orders o JOIN customers c ON c.id = o.customer_id
+       ${where}
+       ORDER BY o.created_at DESC, o.rowid DESC
+       LIMIT ? OFFSET ?`
+    )
+    .all(...params, filters.perPage, (paged.page - 1) * filters.perPage) as (OrderRow & {
+    customer_name: string | null;
+    customer_phone: string | null;
+    item_count: number;
+  })[];
+
+  paged.items = rows.map((row) => {
+    const { items: _items, ...order } = mapOrder(row, []);
+    void _items;
+    return {
+      ...order,
+      itemCount: row.item_count,
+      customerName: row.customer_name,
+      customerPhone: row.customer_phone,
+    };
+  });
+  return paged;
+}
+
+export function countOrdersByStatus(): Record<OrderStatus, number> {
+  const counts = Object.fromEntries(ORDER_STATUS_VALUES.map((s) => [s, 0])) as Record<
+    OrderStatus,
+    number
+  >;
+  const rows = db
+    .prepare("SELECT status, COUNT(*) as n FROM orders GROUP BY status")
+    .all() as { status: OrderStatus; n: number }[];
+  for (const row of rows) counts[row.status] = row.n;
+  return counts;
+}
+
+export function getOrderStats(): { orderCount: number; revenue: number } {
+  const row = db
+    .prepare(
+      `SELECT COUNT(*) as order_count,
+              COALESCE(SUM(CASE WHEN status NOT IN ('PENDING_PAYMENT','CANCELED') THEN total ELSE 0 END), 0) as revenue
+       FROM orders`
+    )
+    .get() as { order_count: number; revenue: number };
+  return { orderCount: row.order_count, revenue: row.revenue };
+}
+
+export type OrderDetail = Order & {
+  customerName: string | null;
+  customerPhone: string | null;
+};
+
+export function getOrderDetail(id: string): OrderDetail | undefined {
+  const order = getOrderById(id);
+  if (!order) return undefined;
+  const customer = db
+    .prepare("SELECT name, phone FROM customers WHERE id = ?")
+    .get(order.customerId) as { name: string | null; phone: string } | undefined;
+  return {
+    ...order,
+    customerName: customer?.name ?? null,
+    customerPhone: customer?.phone ?? null,
+  };
 }
 
 function generateOrderNumber(): string {

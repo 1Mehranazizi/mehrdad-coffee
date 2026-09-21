@@ -41,7 +41,10 @@ export default function ReviewModerationRow({ review }: { review: Review }) {
         <div>
           <p className="font-semibold text-ink">{review.productName}</p>
           <p className="text-xs text-ink-soft">
-            {review.customerName || "مشتری"}
+            {review.customerName || "مشتری"} ·{" "}
+            <span className={review.approved ? "text-coffee-deep" : "text-amber-700"}>
+              {review.approved ? "تایید شده" : "در انتظار تایید"}
+            </span>
           </p>
         </div>
         <div className="flex items-center gap-0.5" dir="ltr">
