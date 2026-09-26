@@ -1,27 +1,28 @@
-// Kavenegar SMS integration. Uses their "Verify Lookup" endpoint, meant
-// exactly for OTP codes (https://kavenegar.com/rest.html#lookup).
-// If KAVENEGAR_API_KEY is not set, the code is logged to the server
-// console instead — useful for local development without SMS credit.
+import Kavenegar from "kavenegar";
 
 export async function sendOtpSms(phone: string, code: string): Promise<void> {
-  const apiKey = process.env.KAVENEGAR_API_KEY;
-  const template = process.env.KAVENEGAR_OTP_TEMPLATE || "mehrdadotp";
+  return new Promise((resolve, reject) => {
+    const api = Kavenegar.KavenegarApi({
+      apikey: process.env.KAVENEGAR_API_KEY!,
+    });
 
-  if (!apiKey) {
-    console.log(`[dev-otp] SMS to ${phone}: کد ورود شما ${code} است.`);
-    return;
-  }
+    api.VerifyLookup(
+      {
+        receptor: phone,
+        token: code,
+        template: "mehrdadcoffee",
+      },
+      (response, status) => {
+        console.log("Kavenegar response:", response);
+        console.log("Kavenegar status:", status);
 
-  const url = `https://api.kavenegar.com/v1/${apiKey}/verify/lookup.json`;
-  const params = new URLSearchParams({
-    receptor: phone,
-    token: code,
-    template,
+        if (status === 200) {
+          resolve();
+          return;
+        }
+
+        reject(new Error(`Kavenegar OTP error: ${status}`));
+      }
+    );
   });
-
-  const res = await fetch(`${url}?${params.toString()}`, { method: "GET" });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`Kavenegar send failed: ${res.status} ${text}`);
-  }
 }
