@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   // title: "قهوه مهرداد | فروشگاه دان و پودر قهوه تازه برشته",
-  title: "8662357",
+  title: "29500719",
   description:
     "فروشگاه اینترنتی قهوه مهرداد؛ دان و پودر قهوه تازه برشته‌شده، اسپرسو، فیلتر و ترک. طعم اصالت، عطر ماندگار.",
 };
@@ -20,7 +20,7 @@ export default function RootLayout({
   return (
     <html lang="fa" dir="rtl" className={`h-full`}>
       <head>
-        <meta name="enamad" content="8662357" />
+        <meta name="enamad" content="29500719" />
       </head>
       <body className="min-h-full flex flex-col bg-paper text-ink font-sans antialiased pb-16 md:pb-0">
         {children}
