@@ -42,7 +42,9 @@ export async function POST(request: Request) {
   });
 
   try {
-    await sendOtpSms(phone, code);
+    // await sendOtpSms(phone, code);
+    console.log(`otp : ${code}`);
+    
   } catch {
     return NextResponse.json(
       { error: "ارسال پیامک با خطا مواجه شد. کمی بعد دوباره تلاش کنید" },

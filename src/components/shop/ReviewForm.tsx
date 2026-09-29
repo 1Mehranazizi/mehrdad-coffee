@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Star } from "lucide-react";
+import { toast } from "@/lib/toast-store";
 
 type Status = "can-review" | "not-logged-in" | "not-purchased" | "already-reviewed";
 
@@ -54,6 +55,7 @@ export default function ReviewForm({
     if (comment.trim().length < 3) {
       setResult("error");
       setErrorMsg("لطفاً نظر خود را کمی کامل‌تر بنویسید.");
+      toast.error("لطفاً نظر خود را کمی کامل‌تر بنویسید.");
       return;
     }
     setSubmitting(true);
@@ -68,12 +70,15 @@ export default function ReviewForm({
       if (!res.ok) {
         setResult("error");
         setErrorMsg(data.error || "ثبت نظر با خطا مواجه شد.");
+        toast.error(data.error || "ثبت نظر با خطا مواجه شد.");
         return;
       }
       setResult("success");
+      toast.success("نظر شما ثبت شد و پس از تأیید نمایش داده می‌شود");
     } catch {
       setResult("error");
       setErrorMsg("ارتباط با سرور برقرار نشد.");
+      toast.error("ارتباط با سرور برقرار نشد.");
     } finally {
       setSubmitting(false);
     }

@@ -3,14 +3,19 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Minus, Plus, Trash2 } from "lucide-react";
-import { useCartStore, cartTotal } from "@/lib/cart-store";
+import { useCartStore } from "@/lib/cart-store";
+import { useCartPricing } from "@/lib/use-cart-pricing";
+import { formatWeightGrams } from "@/lib/partner";
 import { formatToman, weightLabel } from "@/lib/products";
+import { toast } from "@/lib/toast-store";
 
 export default function CartClient() {
   const [hydrated, setHydrated] = useState(false);
   const items = useCartStore((s) => s.items);
   const setQuantity = useCartStore((s) => s.setQuantity);
   const removeItem = useCartStore((s) => s.removeItem);
+
+  const pricing = useCartPricing(items);
 
   // avoid SSR/localStorage mismatch flash
   useEffect(() => setHydrated(true), []);
@@ -31,7 +36,7 @@ export default function CartClient() {
     );
   }
 
-  const subtotal = cartTotal(items);
+  const subtotal = pricing.subtotal;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 md:py-14">
@@ -50,7 +55,7 @@ export default function CartClient() {
               <p className="mt-1 text-xs text-ink-soft">
                 {weightLabel(item.weight)}
                 {item.grindTypeName ? ` · ${item.grindTypeName}` : ""} ·{" "}
-                {formatToman(item.price)}
+                {formatToman(pricing.unitPrice(item))}
               </p>
             </div>
 
@@ -75,13 +80,16 @@ export default function CartClient() {
             </div>
 
             <p className="w-28 text-left text-sm font-semibold text-ink shrink-0">
-              {formatToman(item.price * item.quantity)}
+              {formatToman(pricing.unitPrice(item) * item.quantity)}
             </p>
 
             <button
               type="button"
               aria-label="حذف از سبد"
-              onClick={() => removeItem(item.variantId)}
+              onClick={() => {
+                removeItem(item.variantId);
+                toast.info("محصول از سبد خرید حذف شد");
+              }}
               className="p-2 text-ink-soft hover:text-red-700 transition-colors shrink-0"
             >
               <Trash2 size={18} />
@@ -97,15 +105,38 @@ export default function CartClient() {
             {formatToman(subtotal)}
           </span>
         </p>
-        <Link
-          href="/checkout"
-          className="w-full sm:w-auto rounded-full bg-ink px-8 py-3 text-sm font-semibold text-cream hover:bg-coffee-deep transition-colors text-center"
-        >
-          ادامه و ثبت سفارش
-        </Link>
+        {pricing.meetsMinimum ? (
+          <Link
+            href="/checkout"
+            className="w-full sm:w-auto rounded-full bg-ink px-8 py-3 text-sm font-semibold text-cream hover:bg-coffee-deep transition-colors text-center"
+          >
+            ادامه و ثبت سفارش
+          </Link>
+        ) : (
+          <button
+            type="button"
+            disabled
+            className="w-full sm:w-auto rounded-full bg-ink px-8 py-3 text-sm font-semibold text-cream opacity-50 cursor-not-allowed"
+          >
+            ادامه و ثبت سفارش
+          </button>
+        )}
       </div>
+      {pricing.isPartner && (
+        <div
+          className={`mt-3 rounded-xl border px-4 py-3 text-sm ${
+            pricing.meetsMinimum
+              ? "border-emerald-300 bg-emerald-50 text-emerald-900"
+              : "border-amber-300 bg-amber-50 text-amber-900"
+          }`}
+        >
+          {pricing.meetsMinimum
+            ? "قیمت همکار برای شما اعمال شده است."
+            : `حداقل خرید برای مشتریان همکار ${formatWeightGrams(pricing.minWeightGrams)} است. وزن فعلی سبد شما ${formatWeightGrams(pricing.totalWeightGrams)} است.`}
+        </div>
+      )}
       <p className="mt-3 text-xs text-ink-soft">
-        هزینه‌ی ارسال در مرحله‌ی بعد بر اساس مبلغ سفارش محاسبه می‌شود.
+        هزینه‌ی ارسال در مرحله‌ی بعد بر اساس شهر مقصد و وزن سفارش محاسبه می‌شود.
       </p>
     </div>
   );

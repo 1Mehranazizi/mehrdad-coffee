@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import MobileBottomNav from "@/components/MobileBottomNav";
+import Toaster from "@/components/ui/Toaster";
 
 // Every page reads live data (products, orders, articles, sessions…), so render
 // on each request instead of freezing a build-time snapshot. Segment config on
@@ -25,6 +26,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-paper text-ink font-sans antialiased pb-16 md:pb-0">
         {children}
         <MobileBottomNav />
+        <Toaster />
       </body>
     </html>
   );

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, Plus } from "lucide-react";
 import Modal from "@/components/admin/Modal";
+import { toast } from "@/lib/toast-store";
 
 type CustomerData = { id: string; name: string | null; phone: string };
 
@@ -29,6 +30,7 @@ function CustomerFormModal({
     setError("");
     if (!phone.trim()) {
       setError("شماره موبایل الزامی است");
+      toast.error("شماره موبایل الزامی است");
       return;
     }
     setSaving(true);
@@ -44,8 +46,10 @@ function CustomerFormModal({
       const data = await res.json().catch(() => null);
       if (!res.ok) {
         setError(data?.error || "ذخیره‌سازی انجام نشد");
+        toast.error(data?.error || "ذخیره‌سازی انجام نشد");
         return;
       }
+      toast.success(isEdit ? "اطلاعات مشتری ویرایش شد" : "مشتری اضافه شد");
       if (!isEdit) {
         setName("");
         setPhone("");
@@ -54,6 +58,7 @@ function CustomerFormModal({
       router.refresh();
     } catch {
       setError("خطا در ارتباط با سرور");
+      toast.error("خطا در ارتباط با سرور");
     } finally {
       setSaving(false);
     }

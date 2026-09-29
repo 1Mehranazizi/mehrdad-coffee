@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Star, Trash2, X } from "lucide-react";
+import { toast } from "@/lib/toast-store";
 
 type Review = {
   id: string;
@@ -20,16 +21,21 @@ export default function ReviewModerationRow({ review }: { review: Review }) {
   const act = async (action: "approve" | "reject" | "delete") => {
     setLoading(true);
     try {
-      if (action === "delete") {
-        await fetch(`/api/admin/reviews/${review.id}`, { method: "DELETE" });
-      } else {
-        await fetch(`/api/admin/reviews/${review.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ approved: action === "approve" }),
-        });
-      }
+      const res =
+        action === "delete"
+          ? await fetch(`/api/admin/reviews/${review.id}`, { method: "DELETE" })
+          : await fetch(`/api/admin/reviews/${review.id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ approved: action === "approve" }),
+            });
+      if (!res.ok) throw new Error("عملیات انجام نشد");
+      toast.success(
+        action === "delete" ? "نظر حذف شد" : action === "approve" ? "نظر تأیید شد" : "نظر رد شد"
+      );
       router.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "عملیات انجام نشد");
     } finally {
       setLoading(false);
     }

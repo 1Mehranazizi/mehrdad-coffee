@@ -10,6 +10,7 @@ import {
   Newspaper,
   MessageSquare,
   Users,
+  Handshake,
   Sliders,
   Menu,
   X,
@@ -25,6 +26,7 @@ const NAV = [
   { href: "/admin/articles", label: "مقالات", icon: Newspaper },
   { href: "/admin/reviews", label: "نظرات", icon: MessageSquare },
   { href: "/admin/customers", label: "مشتریان", icon: Users },
+  { href: "/admin/partners", label: "درخواست‌های همکاری", icon: Handshake },
 ];
 
 function isActive(pathname: string, href: string) {

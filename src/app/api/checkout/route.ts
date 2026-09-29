@@ -3,6 +3,8 @@ import { getCurrentCustomer } from "@/server/auth/customer";
 import { createOrderFromCart, setOrderPaymentAuthority } from "@/server/repo/orders";
 import { createAddress } from "@/server/repo/addresses";
 import { requestPayment } from "@/server/payment/zarinpal";
+import { quoteShipping } from "@/server/shipping";
+import { isPartnerCustomer } from "@/server/repo/customers";
 
 export async function POST(request: Request) {
   const customer = await getCurrentCustomer();
@@ -28,9 +30,29 @@ export async function POST(request: Request) {
     }
   }
 
+  // Shipping is always computed on the server: free only for Kermanshah, Postex price otherwise.
+  const partner = isPartnerCustomer(customer);
+  const quote = await quoteShipping(
+    items,
+    {
+      province,
+      city,
+      addressLine,
+      postalCode,
+      receiverName,
+      receiverPhone,
+    },
+    partner
+  );
+  if (!quote.ok) {
+    return NextResponse.json({ error: quote.error }, { status: 400 });
+  }
+
   const { order, error } = createOrderFromCart({
     customerId: customer.id,
     items,
+    shippingCost: quote.shippingCost,
+    partner,
     receiverName,
     receiverPhone,
     province,

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isValidLocation } from "@/lib/iran-locations";
 import { getCurrentCustomer } from "@/server/auth/customer";
 import { getAddressById, updateAddress, deleteAddress } from "@/server/repo/addresses";
 
@@ -21,6 +22,10 @@ export async function PATCH(
     if (!body?.[field] || String(body[field]).trim() === "") {
       return NextResponse.json({ error: "لطفاً همه‌ی فیلدهای ضروری را پر کنید" }, { status: 400 });
     }
+  }
+
+  if (!isValidLocation(String(body.province), String(body.city))) {
+    return NextResponse.json({ error: "استان یا شهر انتخاب‌شده معتبر نیست" }, { status: 400 });
   }
 
   updateAddress(id, {

@@ -9,6 +9,8 @@ export type ProductVariant = {
   grindTypeId: string | null;
   grindTypeName: string | null;
   price: number;
+  /** Wholesale price for approved partners; null => partners pay the normal price. */
+  partnerPrice: number | null;
 };
 
 type VariantRow = {
@@ -17,6 +19,7 @@ type VariantRow = {
   weight: string;
   grind_type_id: string | null;
   price: number;
+  partner_price: number | null;
   grind_type_name: string | null;
 };
 
@@ -28,7 +31,20 @@ function mapVariant(row: VariantRow): ProductVariant {
     grindTypeId: row.grind_type_id,
     grindTypeName: row.grind_type_name,
     price: row.price,
+    partnerPrice: row.partner_price,
   };
+}
+
+/** The price a given kind of customer pays for a variant. */
+export function effectivePrice(variant: ProductVariant, partner: boolean): number {
+  return partner && variant.partnerPrice !== null ? variant.partnerPrice : variant.price;
+}
+
+export function priceForCustomer<T extends ProductWithVariants>(product: T, partner: boolean): T {
+  if (!partner) return product;
+  const variants = product.variants.map((v) => ({ ...v, price: effectivePrice(v, true) }));
+  const minPrice = variants.length > 0 ? Math.min(...variants.map((v) => v.price)) : 0;
+  return { ...product, variants, minPrice };
 }
 
 export function getVariantsForProduct(productId: string): ProductVariant[] {
@@ -54,16 +70,30 @@ export function getVariantById(id: string): ProductVariant | undefined {
   return row ? mapVariant(row) : undefined;
 }
 
+export type VariantInput = {
+  weight: string;
+  grindTypeId?: string | null;
+  price: number;
+  partnerPrice?: number | null;
+};
+
 function replaceVariants(
   productId: string,
-  variants: { weight: string; grindTypeId?: string | null; price: number }[]
+  variants: VariantInput[]
 ) {
   db.prepare("DELETE FROM product_variants WHERE product_id = ?").run(productId);
   const insert = db.prepare(
-    "INSERT INTO product_variants (id, product_id, weight, grind_type_id, price) VALUES (?, ?, ?, ?, ?)"
+    "INSERT INTO product_variants (id, product_id, weight, grind_type_id, price, partner_price) VALUES (?, ?, ?, ?, ?, ?)"
   );
   for (const v of variants) {
-    insert.run(newId("var"), productId, v.weight, v.grindTypeId ?? null, v.price);
+    insert.run(
+      newId("var"),
+      productId,
+      v.weight,
+      v.grindTypeId ?? null,
+      v.price,
+      v.partnerPrice ?? null
+    );
   }
 }
 
@@ -269,7 +299,7 @@ export function createProduct(input: {
   description?: string;
   published: boolean;
   categoryId: string;
-  variants: { weight: string; grindTypeId?: string | null; price: number }[];
+  variants: VariantInput[];
 }): ProductWithVariants {
   const id = newId("prod");
   db.prepare(
@@ -299,7 +329,7 @@ export function updateProduct(
     description?: string;
     published: boolean;
     categoryId: string;
-    variants: { weight: string; grindTypeId?: string | null; price: number }[];
+    variants: VariantInput[];
   }
 ): void {
   db.prepare(

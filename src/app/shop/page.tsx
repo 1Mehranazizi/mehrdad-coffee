@@ -1,7 +1,8 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ShopClient from "@/components/shop/ShopClient";
-import { listProducts, getPriceRange } from "@/server/repo/products";
+import { listProducts } from "@/server/repo/products";
+import { currentIsPartner, priced } from "@/server/pricing";
 import { listCategories } from "@/server/repo/categories";
 
 export const metadata = {
@@ -21,7 +22,9 @@ export default async function ShopPage({
 
   const categories = listCategories();
   const categoryById = new Map(categories.map((c) => [c.id, c]));
-  const products = listProducts({ onlyPublished: true }).map((p) => ({
+  const partner = await currentIsPartner();
+  const allProducts = priced(listProducts({ onlyPublished: true }), partner);
+  const products = allProducts.map((p) => ({
     id: p.id,
     slug: p.slug,
     name: p.name,
@@ -31,7 +34,11 @@ export default async function ShopPage({
     categorySlug: categoryById.get(p.categoryId)?.slug ?? "",
     weights: Array.from(new Set(p.variants.map((v) => v.weight))),
   }));
-  const priceRange = getPriceRange();
+  const allPrices = allProducts.flatMap((p) => p.variants.map((v) => v.price));
+  const priceRange = {
+    min: allPrices.length ? Math.min(...allPrices) : 0,
+    max: allPrices.length ? Math.max(...allPrices) : 0,
+  };
 
   return (
     <>

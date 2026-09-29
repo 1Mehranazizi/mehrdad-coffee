@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Check, Minus, Plus, ShoppingBag } from "lucide-react";
 import { useCartStore } from "@/lib/cart-store";
 import { weightLabel, formatToman } from "@/lib/products";
+import { toast } from "@/lib/toast-store";
 
 type Variant = {
   id: string;
@@ -67,6 +68,7 @@ export default function VariantSelector({
       },
       quantity
     );
+    toast.success("به سبد خرید اضافه شد");
     setAdded(true);
     window.setTimeout(() => setAdded(false), 1800);
   };

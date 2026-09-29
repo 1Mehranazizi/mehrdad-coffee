@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { orderStatusBadge, orderStatusOptions } from "@/lib/order-status";
 import type { OrderStatus } from "@/server/repo/orders";
+import { toast } from "@/lib/toast-store";
 
 export default function OrderStatusSelect({
   orderId,
@@ -52,11 +53,13 @@ export default function OrderStatusSelect({
         const data = await res.json().catch(() => null);
         throw new Error(data?.error || "تغییر وضعیت انجام نشد");
       }
+      toast.success("وضعیت سفارش تغییر کرد");
       router.refresh();
       onChanged?.(value);
     } catch (err) {
       setStatus(previous);
       setError(err instanceof Error ? err.message : "تغییر وضعیت انجام نشد");
+      toast.error(err instanceof Error ? err.message : "تغییر وضعیت انجام نشد");
     } finally {
       setSaving(false);
     }

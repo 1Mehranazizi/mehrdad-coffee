@@ -6,6 +6,7 @@ import Modal from "@/components/admin/Modal";
 import OrderDetailsView from "@/components/admin/OrderDetailsView";
 import OrderStatusSelect from "@/components/admin/OrderStatusSelect";
 import type { OrderDetail } from "@/server/repo/orders";
+import { toast } from "@/lib/toast-store";
 
 /** "Details" button for an orders-list row: loads the order and shows it in a dialog. */
 export default function OrderQuickView({
@@ -30,6 +31,7 @@ export default function OrderQuickView({
       setOrder(data.order);
     } catch {
       setError("دریافت جزئیات سفارش انجام نشد.");
+      toast.error("دریافت جزئیات سفارش انجام نشد.");
     } finally {
       setLoading(false);
     }

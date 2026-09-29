@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "@/lib/toast-store";
 
 export default function ProfileForm({ initialName }: { initialName: string }) {
   const [name, setName] = useState(initialName);
@@ -12,12 +13,19 @@ export default function ProfileForm({ initialName }: { initialName: string }) {
     setSaving(true);
     setSaved(false);
     try {
-      await fetch("/api/account/profile", {
+      const res = await fetch("/api/account/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name }),
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || "ذخیره تغییرات با خطا مواجه شد");
+      }
       setSaved(true);
+      toast.success("اطلاعات حساب ذخیره شد");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "ذخیره تغییرات با خطا مواجه شد");
     } finally {
       setSaving(false);
     }

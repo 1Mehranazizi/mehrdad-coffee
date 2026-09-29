@@ -13,7 +13,26 @@ function createConnection() {
   connection.pragma("foreign_keys = ON");
   const schema = fs.readFileSync(SCHEMA_PATH, "utf-8");
   connection.exec(schema);
+  migrate(connection);
   return connection;
+}
+
+/** CREATE TABLE IF NOT EXISTS doesn't add columns to existing tables, so add them here. */
+function ensureColumn(
+  connection: Database.Database,
+  table: string,
+  column: string,
+  ddl: string
+) {
+  const cols = connection.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+  if (!cols.some((c) => c.name === column)) {
+    connection.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${ddl}`);
+  }
+}
+
+function migrate(connection: Database.Database) {
+  ensureColumn(connection, "customers", "customer_type", "TEXT NOT NULL DEFAULT 'regular'");
+  ensureColumn(connection, "product_variants", "partner_price", "INTEGER");
 }
 
 declare global {

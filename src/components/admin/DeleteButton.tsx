@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
+import { toast } from "@/lib/toast-store";
 
 export default function DeleteButton({
   endpoint,
@@ -18,8 +19,15 @@ export default function DeleteButton({
     if (!confirm(confirmMessage)) return;
     setLoading(true);
     try {
-      await fetch(endpoint, { method: "DELETE" });
+      const res = await fetch(endpoint, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || "حذف انجام نشد");
+      }
+      toast.success("با موفقیت حذف شد");
       router.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "حذف انجام نشد");
     } finally {
       setLoading(false);
     }

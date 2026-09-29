@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import LocationSelect from "@/components/ui/LocationSelect";
+import { toast } from "@/lib/toast-store";
 
 export type AddressFormValues = {
   title: string;
@@ -51,14 +53,17 @@ export default function AddressForm({
       !values.receiverPhone
     ) {
       setError("لطفاً همه‌ی فیلدهای ضروری را پر کنید");
+      toast.error("لطفاً همه‌ی فیلدهای ضروری را پر کنید");
       return;
     }
     setSaving(true);
     setError("");
     try {
       await onSubmit(values);
-    } catch {
-      setError("ذخیره آدرس با خطا مواجه شد");
+    } catch (err) {
+      const msg = err instanceof Error && err.message ? err.message : "ذخیره آدرس با خطا مواجه شد";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
@@ -72,20 +77,11 @@ export default function AddressForm({
         onChange={(e) => set("title", e.target.value)}
         className="w-full rounded-xl border border-line bg-paper px-4 py-2.5 text-sm focus:border-coffee"
       />
-      <div className="grid grid-cols-2 gap-3">
-        <input
-          placeholder="استان"
-          value={values.province}
-          onChange={(e) => set("province", e.target.value)}
-          className="rounded-xl border border-line bg-paper px-4 py-2.5 text-sm focus:border-coffee"
-        />
-        <input
-          placeholder="شهر"
-          value={values.city}
-          onChange={(e) => set("city", e.target.value)}
-          className="rounded-xl border border-line bg-paper px-4 py-2.5 text-sm focus:border-coffee"
-        />
-      </div>
+      <LocationSelect
+        province={values.province}
+        city={values.city}
+        onChange={({ province, city }) => setValues((v) => ({ ...v, province, city }))}
+      />
       <textarea
         placeholder="آدرس کامل"
         value={values.addressLine}

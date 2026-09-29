@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/server/auth/admin";
-import { getAllProductsForAdmin, createProduct } from "@/server/repo/products";
+import { getAllProductsForAdmin, createProduct, type VariantInput } from "@/server/repo/products";
 import { saveUploadedImage } from "@/server/uploads";
 
 export async function GET() {
@@ -29,9 +29,14 @@ export async function POST(request: Request) {
   const image = form.get("image");
   const variantsRaw = String(form.get("variants") ?? "[]");
 
-  let variants: { weight: string; grindTypeId?: string | null; price: number }[] = [];
+  let variants: VariantInput[] = [];
   try {
-    variants = JSON.parse(variantsRaw);
+    variants = (JSON.parse(variantsRaw) as VariantInput[]).map((v) => ({
+      ...v,
+      price: Math.round(Number(v.price)),
+      partnerPrice:
+        v.partnerPrice != null && Number(v.partnerPrice) > 0 ? Math.round(Number(v.partnerPrice)) : null,
+    }));
   } catch {
     return NextResponse.json({ error: "اطلاعات گزینه‌های محصول نامعتبر است" }, { status: 400 });
   }

@@ -2,13 +2,20 @@
 
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
+import { toast } from "@/lib/toast-store";
 
 export default function AdminLogoutButton() {
   const router = useRouter();
   return (
     <button
       onClick={async () => {
-        await fetch("/api/admin/logout", { method: "POST" });
+        try {
+          await fetch("/api/admin/logout", { method: "POST" });
+          toast.success("از پنل مدیریت خارج شدید");
+        } catch {
+          toast.error("خروج با خطا مواجه شد");
+          return;
+        }
         router.push("/admin/login");
         router.refresh();
       }}

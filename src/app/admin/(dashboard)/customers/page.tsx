@@ -34,6 +34,7 @@ export default async function AdminCustomersPage({ searchParams }: { searchParam
             <tr>
               <th className="p-3 text-right font-medium">نام</th>
               <th className="p-3 text-right font-medium">موبایل</th>
+              <th className="p-3 text-right font-medium">نوع</th>
               <th className="p-3 text-right font-medium">تعداد سفارش</th>
               <th className="p-3 text-right font-medium">تاریخ عضویت</th>
               <th className="p-3"></th>
@@ -45,6 +46,13 @@ export default async function AdminCustomersPage({ searchParams }: { searchParam
                 <td className="p-3 text-ink">{c.name || "—"}</td>
                 <td className="p-3 text-ink-soft" dir="ltr">
                   <span className="block text-right">{c.phone}</span>
+                </td>
+                <td className="p-3">
+                  {c.type === "partner" ? (
+                    <span className="rounded-full bg-coffee px-2.5 py-0.5 text-xs text-cream">همکار</span>
+                  ) : (
+                    <span className="text-xs text-ink-soft">عادی</span>
+                  )}
                 </td>
                 <td className="p-3 text-ink-soft">{c.orderCount.toLocaleString("fa-IR")}</td>
                 <td className="p-3 text-xs text-ink-soft">{formatDate(c.createdAt)}</td>
@@ -67,7 +75,12 @@ export default async function AdminCustomersPage({ searchParams }: { searchParam
             className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-cream p-4"
           >
             <div className="min-w-0">
-              <p className="font-medium text-ink">{c.name || "بدون نام"}</p>
+              <p className="font-medium text-ink">
+                {c.name || "بدون نام"}
+                {c.type === "partner" && (
+                  <span className="mr-2 rounded-full bg-coffee px-2 py-0.5 text-xs text-cream">همکار</span>
+                )}
+              </p>
               <p className="mt-0.5 text-sm text-ink-soft" dir="ltr" style={{ textAlign: "right" }}>
                 {c.phone}
               </p>

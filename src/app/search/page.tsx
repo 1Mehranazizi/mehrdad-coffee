@@ -2,6 +2,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
 import { searchProducts } from "@/server/repo/products";
+import { currentIsPartner, priced } from "@/server/pricing";
 
 export const metadata = { title: "نتایج جستجو | قهوه مهرداد" };
 
@@ -11,7 +12,8 @@ export default async function SearchPage({
   searchParams: Promise<{ q?: string }>;
 }) {
   const { q = "" } = await searchParams;
-  const products = q.trim().length >= 2 ? searchProducts(q.trim(), 30) : [];
+  const products =
+    q.trim().length >= 2 ? priced(searchProducts(q.trim(), 30), await currentIsPartner()) : [];
 
   return (
     <>

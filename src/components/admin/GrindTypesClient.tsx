@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Pencil, Plus, Trash2, X, Check } from "lucide-react";
+import { toast } from "@/lib/toast-store";
 
 type GrindType = { id: string; title: string; sortOrder: number };
 
@@ -22,13 +23,17 @@ export default function GrindTypesClient({ initial }: { initial: GrindType[] }) 
     if (!newTitle.trim()) return;
     setSaving(true);
     try {
-      await fetch("/api/admin/grind-types", {
+      const res = await fetch("/api/admin/grind-types", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: newTitle.trim() }),
       });
+      if (!res.ok) throw new Error((await res.json().catch(() => null))?.error || "افزودن انجام نشد");
+      toast.success("گزینه اضافه شد");
       setNewTitle("");
       await refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "افزودن انجام نشد");
     } finally {
       setSaving(false);
     }
@@ -38,13 +43,17 @@ export default function GrindTypesClient({ initial }: { initial: GrindType[] }) 
     if (!editingTitle.trim()) return;
     setSaving(true);
     try {
-      await fetch(`/api/admin/grind-types/${id}`, {
+      const res = await fetch(`/api/admin/grind-types/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: editingTitle.trim() }),
       });
+      if (!res.ok) throw new Error((await res.json().catch(() => null))?.error || "ویرایش انجام نشد");
+      toast.success("گزینه ویرایش شد");
       setEditingId(null);
       await refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "ویرایش انجام نشد");
     } finally {
       setSaving(false);
     }
@@ -52,8 +61,14 @@ export default function GrindTypesClient({ initial }: { initial: GrindType[] }) 
 
   const handleDelete = async (id: string) => {
     if (!confirm("این گزینه حذف شود؟ اگر محصولی از آن استفاده کند ممکن است دچار مشکل شود.")) return;
-    await fetch(`/api/admin/grind-types/${id}`, { method: "DELETE" });
-    await refresh();
+    try {
+      const res = await fetch(`/api/admin/grind-types/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error((await res.json().catch(() => null))?.error || "حذف انجام نشد");
+      toast.success("گزینه حذف شد");
+      await refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "حذف انجام نشد");
+    }
   };
 
   return (

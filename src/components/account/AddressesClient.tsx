@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Pencil, Plus, Star, Trash2 } from "lucide-react";
+import { toast } from "@/lib/toast-store";
 import AddressForm, { type AddressFormValues } from "@/components/account/AddressForm";
 
 type Address = AddressFormValues & { id: string };
@@ -30,35 +31,52 @@ export default function AddressesClient() {
           }))
         )
       )
+      .catch(() => toast.error("دریافت آدرس‌ها با خطا مواجه شد"))
       .finally(() => setLoading(false));
   };
 
   useEffect(load, []);
 
+  const assertOk = async (res: Response, fallback: string) => {
+    if (res.ok) return;
+    const data = await res.json().catch(() => null);
+    throw new Error(data?.error || fallback);
+  };
+
   const handleCreate = async (values: AddressFormValues) => {
-    await fetch("/api/addresses", {
+    const res = await fetch("/api/addresses", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(values),
     });
+    await assertOk(res, "ذخیره آدرس با خطا مواجه شد");
+    toast.success("آدرس با موفقیت ذخیره شد");
     setEditing(null);
     load();
   };
 
   const handleUpdate = async (id: string, values: AddressFormValues) => {
-    await fetch(`/api/addresses/${id}`, {
+    const res = await fetch(`/api/addresses/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(values),
     });
+    await assertOk(res, "ویرایش آدرس با خطا مواجه شد");
+    toast.success("آدرس با موفقیت ویرایش شد");
     setEditing(null);
     load();
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm("این آدرس حذف شود؟")) return;
-    await fetch(`/api/addresses/${id}`, { method: "DELETE" });
-    load();
+    try {
+      const res = await fetch(`/api/addresses/${id}`, { method: "DELETE" });
+      await assertOk(res, "حذف آدرس با خطا مواجه شد");
+      toast.success("آدرس حذف شد");
+      load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "حذف آدرس با خطا مواجه شد");
+    }
   };
 
   if (loading) return <p className="text-sm text-ink-soft">در حال بارگذاری...</p>;

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Spinner from "@/components/Spinner";
+import { toast } from "@/lib/toast-store";
 
 const PHONE_REGEX = /^09\d{9}$/;
 
@@ -22,6 +23,7 @@ export default function LoginForm() {
     setError("");
     if (!PHONE_REGEX.test(phone)) {
       setError("شماره موبایل را به‌صورت صحیح وارد کنید (۰۹xxxxxxxxx)");
+      toast.error("شماره موبایل را به‌صورت صحیح وارد کنید");
       return;
     }
     setLoading(true);
@@ -34,11 +36,14 @@ export default function LoginForm() {
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || "خطایی رخ داد");
+        toast.error(data.error || "خطایی رخ داد");
         return;
       }
+      toast.success("کد تأیید برای شما پیامک شد");
       setStep("code");
     } catch {
       setError("ارتباط با سرور برقرار نشد");
+      toast.error("ارتباط با سرور برقرار نشد");
     } finally {
       setLoading(false);
     }
@@ -49,6 +54,7 @@ export default function LoginForm() {
     setError("");
     if (!/^\d{5}$/.test(code)) {
       setError("کد ۵ رقمی را کامل وارد کنید");
+      toast.error("کد ۵ رقمی را کامل وارد کنید");
       return;
     }
     setLoading(true);
@@ -61,12 +67,15 @@ export default function LoginForm() {
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || "خطایی رخ داد");
+        toast.error(data.error || "خطایی رخ داد");
         return;
       }
+      toast.success("با موفقیت وارد شدید");
       router.push(next);
       router.refresh();
     } catch {
       setError("ارتباط با سرور برقرار نشد");
+      toast.error("ارتباط با سرور برقرار نشد");
     } finally {
       setLoading(false);
     }

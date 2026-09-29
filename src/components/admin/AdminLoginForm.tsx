@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Spinner from "@/components/Spinner";
+import { toast } from "@/lib/toast-store";
 
 export default function AdminLoginForm() {
   const router = useRouter();
@@ -24,10 +25,14 @@ export default function AdminLoginForm() {
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || "خطایی رخ داد");
+        toast.error(data.error || "خطایی رخ داد");
         return;
       }
+      toast.success("خوش آمدید");
       router.push("/admin");
       router.refresh();
+    } catch {
+      toast.error("ارتباط با سرور برقرار نشد");
     } finally {
       setLoading(false);
     }

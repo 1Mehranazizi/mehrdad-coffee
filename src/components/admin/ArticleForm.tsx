@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { toast } from "@/lib/toast-store";
 
 type Initial = {
   id: string;
@@ -30,6 +31,7 @@ export default function ArticleForm({ initial }: { initial?: Initial }) {
     setError("");
     if (!slug || !title || !content) {
       setError("عنوان، اسلاگ و متن الزامی است");
+      toast.error("عنوان، اسلاگ و متن الزامی است");
       return;
     }
     setSaving(true);
@@ -49,10 +51,14 @@ export default function ArticleForm({ initial }: { initial?: Initial }) {
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || "خطایی رخ داد");
+        toast.error(data.error || "خطایی رخ داد");
         return;
       }
+      toast.success(initial ? "مقاله ویرایش شد" : "مقاله ایجاد شد");
       router.push("/admin/articles");
       router.refresh();
+    } catch {
+      toast.error("ارتباط با سرور برقرار نشد");
     } finally {
       setSaving(false);
     }

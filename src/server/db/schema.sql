@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS customers (
   id TEXT PRIMARY KEY,
   phone TEXT UNIQUE NOT NULL,
   name TEXT,
+  customer_type TEXT NOT NULL DEFAULT 'regular',
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -69,7 +70,8 @@ CREATE TABLE IF NOT EXISTS product_variants (
   product_id TEXT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
   weight TEXT NOT NULL,
   grind_type_id TEXT REFERENCES grind_types(id),
-  price INTEGER NOT NULL
+  price INTEGER NOT NULL,
+  partner_price INTEGER
 );
 CREATE INDEX IF NOT EXISTS idx_variants_product ON product_variants(product_id);
 
@@ -131,3 +133,24 @@ CREATE TABLE IF NOT EXISTS articles (
   published INTEGER NOT NULL DEFAULT 1,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- Partner (همکار) verification requests: one row per customer, re-submittable after rejection
+CREATE TABLE IF NOT EXISTS partner_applications (
+  id TEXT PRIMARY KEY,
+  customer_id TEXT NOT NULL UNIQUE REFERENCES customers(id) ON DELETE CASCADE,
+  owner_name TEXT NOT NULL,
+  national_code TEXT NOT NULL,
+  cafe_name TEXT NOT NULL,
+  cafe_phone TEXT NOT NULL,
+  province TEXT NOT NULL,
+  city TEXT NOT NULL,
+  address_line TEXT NOT NULL,
+  license_number TEXT,
+  instagram TEXT,
+  status TEXT NOT NULL DEFAULT 'PENDING',
+  admin_note TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  reviewed_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_partner_apps_status ON partner_applications(status);

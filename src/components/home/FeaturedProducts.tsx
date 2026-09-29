@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { getFeaturedProducts } from "@/server/repo/products";
 import ProductCard from "@/components/ProductCard";
+import { currentIsPartner, priced } from "@/server/pricing";
 
-export default function FeaturedProducts() {
-  const featuredProducts = getFeaturedProducts(4);
+export default async function FeaturedProducts() {
+  const featuredProducts = priced(getFeaturedProducts(4), await currentIsPartner());
 
   if (featuredProducts.length === 0) return null;
 

@@ -1,10 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCartStore, cartTotal } from "@/lib/cart-store";
+import { useCartStore } from "@/lib/cart-store";
+import { useCartPricing } from "@/lib/use-cart-pricing";
+import { formatWeightGrams } from "@/lib/partner";
 import Spinner from "@/components/Spinner";
 import { formatToman, weightLabel } from "@/lib/products";
+import LocationSelect from "@/components/ui/LocationSelect";
+import { isValidLocation } from "@/lib/iran-locations";
+import { toast } from "@/lib/toast-store";
+
+type ShippingState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "ok"; cost: number; free: boolean }
+  | { status: "error"; message: string };
 
 type Address = {
   id: string;
@@ -55,6 +67,85 @@ export default function CheckoutClient() {
       .finally(() => setLoadingAddresses(false));
   }, []);
 
+  const pricing = useCartPricing(items);
+  const [fetched, setFetched] = useState<{ key: string; state: ShippingState } | null>(null);
+
+  // The location currently chosen (saved address or the new-address form)
+  const selectedAddress = addresses.find((a) => a.id === selectedAddressId);
+  const dest =
+    selectedAddressId !== "new" && selectedAddress
+      ? {
+          province: selectedAddress.province,
+          city: selectedAddress.city,
+          addressLine: selectedAddress.addressLine,
+          postalCode: selectedAddress.postalCode || "",
+        }
+      : {
+          province: form.province,
+          city: form.city,
+          addressLine: form.addressLine,
+          postalCode: form.postalCode,
+        };
+  const locationValid = isValidLocation(dest.province, dest.city);
+  const cartSignature = items.map((i) => `${i.variantId}:${i.quantity}`).join("|");
+  const postalKey = dest.postalCode;
+  const addressKey = dest.addressLine;
+  const quoteKey = `${dest.province}|${dest.city}|${postalKey}|${addressKey}|${cartSignature}`;
+
+  useEffect(() => {
+    if (!hydrated || loadingAddresses || items.length === 0) return;
+    if (!dest.province || !dest.city || !locationValid) return;
+
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch("/api/shipping/quote", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
+          body: JSON.stringify({
+            items: items.map((i) => ({ variantId: i.variantId, quantity: i.quantity })),
+            province: dest.province,
+            city: dest.city,
+            addressLine: addressKey,
+            postalCode: postalKey,
+            receiverName: selectedAddress?.receiverName || form.receiverName,
+            receiverPhone: selectedAddress?.receiverPhone || form.receiverPhone,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "محاسبه هزینه ارسال ناموفق بود");
+        setFetched({ key: quoteKey, state: { status: "ok", cost: data.shippingCost, free: data.free } });
+      } catch (err) {
+        if ((err as Error).name === "AbortError") return;
+        const message = err instanceof Error ? err.message : "محاسبه هزینه ارسال ناموفق بود";
+        setFetched({ key: quoteKey, state: { status: "error", message } });
+        toast.error(message);
+      }
+    }, 400);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, loadingAddresses, dest.province, dest.city, locationValid, cartSignature, postalKey, addressKey, selectedAddressId, quoteKey]);
+
+  // idle / invalid states are derived (no setState in the effect); remote states come from the quote request
+  const shipping: ShippingState =
+    !dest.province || !dest.city
+      ? { status: "idle" }
+      : !locationValid
+        ? {
+            status: "error",
+            message: "استان یا شهر این آدرس معتبر نیست؛ لطفاً آدرس را ویرایش کنید",
+          }
+        : fetched?.key === quoteKey
+          ? fetched.state
+          : { status: "loading" };
+
+  const shippingCost = shipping.status === "ok" ? shipping.cost : 0;
+
   if (!hydrated || loadingAddresses) return null;
 
   if (items.length === 0) {
@@ -65,7 +156,8 @@ export default function CheckoutClient() {
     );
   }
 
-  const subtotal = cartTotal(items);
+  const subtotal = pricing.subtotal;
+  const grandTotal = subtotal + shippingCost;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,6 +178,7 @@ export default function CheckoutClient() {
       };
       if (differentRecipient && (!form.receiverName || !form.receiverPhone)) {
         setError("اطلاعات تحویل‌گیرنده را کامل وارد کنید");
+        toast.error("اطلاعات تحویل‌گیرنده را کامل وارد کنید");
         return;
       }
     } else {
@@ -93,9 +186,24 @@ export default function CheckoutClient() {
         form.province && form.city && form.addressLine && form.receiverName && form.receiverPhone;
       if (!requiredOk) {
         setError("لطفاً همه‌ی فیلدهای آدرس را کامل وارد کنید");
+        toast.error("لطفاً همه‌ی فیلدهای آدرس را کامل وارد کنید");
         return;
       }
       payload = form;
+    }
+
+    if (!pricing.meetsMinimum) {
+      toast.error(`حداقل خرید برای مشتریان همکار ${formatWeightGrams(pricing.minWeightGrams)} است`);
+      return;
+    }
+
+    if (shipping.status !== "ok") {
+      toast.error(
+        shipping.status === "loading"
+          ? "لطفاً تا پایان محاسبه هزینه ارسال صبر کنید"
+          : "هزینه ارسال محاسبه نشده است؛ آدرس را بررسی کنید"
+      );
+      return;
     }
 
     setSubmitting(true);
@@ -113,11 +221,14 @@ export default function CheckoutClient() {
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || "خطایی رخ داد");
+        toast.error(data.error || "خطایی رخ داد");
         return;
       }
+      toast.info("در حال انتقال به درگاه پرداخت...");
       window.location.href = data.paymentUrl;
     } catch {
       setError("ارتباط با سرور برقرار نشد");
+      toast.error("ارتباط با سرور برقرار نشد");
     } finally {
       setSubmitting(false);
     }
@@ -178,20 +289,11 @@ export default function CheckoutClient() {
 
           {selectedAddressId === "new" ? (
             <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <input
-                  placeholder="استان"
-                  value={form.province}
-                  onChange={(e) => setForm({ ...form, province: e.target.value })}
-                  className="rounded-xl border border-line bg-cream px-4 py-2.5 text-sm focus:border-coffee"
-                />
-                <input
-                  placeholder="شهر"
-                  value={form.city}
-                  onChange={(e) => setForm({ ...form, city: e.target.value })}
-                  className="rounded-xl border border-line bg-cream px-4 py-2.5 text-sm focus:border-coffee"
-                />
-              </div>
+              <LocationSelect
+                province={form.province}
+                city={form.city}
+                onChange={({ province, city }) => setForm((f) => ({ ...f, province, city }))}
+              />
               <textarea
                 placeholder="آدرس کامل (خیابان، کوچه، پلاک، واحد)"
                 value={form.addressLine}
@@ -250,6 +352,15 @@ export default function CheckoutClient() {
             </label>
           )}
 
+          {selectedAddressId !== "new" && !locationValid && (
+            <p className="mt-3 text-sm text-red-700">
+              استان یا شهر این آدرس در فهرست معتبر نیست.{" "}
+              <Link href="/account/addresses" className="underline">
+                ویرایش آدرس
+              </Link>
+            </p>
+          )}
+
           {selectedAddressId !== "new" && differentRecipient && (
             <div className="mt-3 grid grid-cols-2 gap-3">
               <input
@@ -271,9 +382,16 @@ export default function CheckoutClient() {
 
         {error && <p className="text-sm text-red-700">{error}</p>}
 
+        {!pricing.meetsMinimum && (
+          <p className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            حداقل خرید برای مشتریان همکار {formatWeightGrams(pricing.minWeightGrams)} است. وزن فعلی
+            سبد شما {formatWeightGrams(pricing.totalWeightGrams)} است.
+          </p>
+        )}
+
         <button
           type="submit"
-          disabled={submitting}
+          disabled={submitting || shipping.status !== "ok" || !pricing.meetsMinimum}
           className="w-full flex items-center justify-center gap-2 rounded-full bg-ink py-3.5 text-sm font-semibold text-cream hover:bg-coffee-deep transition-colors disabled:opacity-60"
         >
           {submitting ? (<><Spinner className="h-4 w-4" /> در حال انتقال به درگاه...</>) : "پرداخت و ثبت سفارش"}
@@ -293,18 +411,35 @@ export default function CheckoutClient() {
                   {item.grindTypeName ? ` · ${item.grindTypeName}` : ""}
                 </span>
               </span>
-              <span className="text-ink">{formatToman(item.price * item.quantity)}</span>
+              <span className="text-ink">{formatToman(pricing.unitPrice(item) * item.quantity)}</span>
             </li>
           ))}
         </ul>
-        <div className="mt-4 pt-4 border-t border-line flex justify-between font-bold text-ink">
-          <span>جمع سبد</span>
-          <span>{formatToman(subtotal)}</span>
+        <div className="mt-4 pt-4 border-t border-line space-y-2 text-sm">
+          <div className="flex justify-between text-ink-soft">
+            <span>جمع سبد</span>
+            <span className="text-ink">{formatToman(subtotal)}</span>
+          </div>
+          <div className="flex justify-between text-ink-soft">
+            <span>هزینه ارسال</span>
+            <span className="text-ink">
+              {shipping.status === "loading" && "در حال محاسبه..."}
+              {shipping.status === "idle" && "پس از انتخاب شهر"}
+              {shipping.status === "error" && "محاسبه نشد"}
+              {shipping.status === "ok" &&
+                (shipping.free ? "رایگان" : formatToman(shipping.cost))}
+            </span>
+          </div>
+          {shipping.status === "error" && (
+            <p className="text-xs text-red-700">{shipping.message}</p>
+          )}
+          <div className="flex justify-between pt-2 border-t border-line font-bold text-ink">
+            <span>مبلغ قابل پرداخت</span>
+            <span>
+              {shipping.status === "ok" ? formatToman(grandTotal) : formatToman(subtotal)}
+            </span>
+          </div>
         </div>
-        <p className="mt-2 text-xs text-ink-soft">
-          هزینه‌ی ارسال پس از ثبت، بر اساس مبلغ سفارش محاسبه و به مبلغ نهایی
-          اضافه می‌شود.
-        </p>
       </aside>
     </div>
   );

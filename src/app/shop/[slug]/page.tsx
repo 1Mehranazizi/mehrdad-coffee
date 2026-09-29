@@ -12,6 +12,7 @@ import ReviewForm from "@/components/shop/ReviewForm";
 import {
   getProductBySlug,
   getRelatedProducts,
+  priceForCustomer,
   listProducts,
 } from "@/server/repo/products";
 import { getCategoryById } from "@/server/repo/categories";
@@ -20,6 +21,7 @@ import {
   hasCustomerReviewedProduct,
 } from "@/server/repo/reviews";
 import { hasCustomerPurchasedProduct } from "@/server/repo/customers";
+import { currentIsPartner, priced } from "@/server/pricing";
 import { getCurrentCustomer } from "@/server/auth/customer";
 import { brewingTips, weightLabel } from "@/lib/products";
 
@@ -47,11 +49,13 @@ export default async function ProductPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
-  if (!product) notFound();
+  const partner = await currentIsPartner();
+  const rawProduct = getProductBySlug(slug);
+  if (!rawProduct) notFound();
+  const product = priceForCustomer(rawProduct, partner);
 
   const category = getCategoryById(product.categoryId);
-  const related = getRelatedProducts(product);
+  const related = priced(getRelatedProducts(product), partner);
   const reviews = listApprovedReviewsForProduct(product.id);
   const avgRating =
     reviews.length > 0

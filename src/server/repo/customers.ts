@@ -7,10 +7,13 @@ import {
   type Paged,
 } from "@/lib/pagination";
 
+import type { CustomerType } from "@/lib/partner";
+
 export type Customer = {
   id: string;
   phone: string;
   name: string | null;
+  type: CustomerType;
   createdAt: string;
 };
 
@@ -18,11 +21,27 @@ type CustomerRow = {
   id: string;
   phone: string;
   name: string | null;
+  customer_type: string;
   created_at: string;
 };
 
 function mapRow(row: CustomerRow): Customer {
-  return { id: row.id, phone: row.phone, name: row.name, createdAt: row.created_at };
+  return {
+    id: row.id,
+    phone: row.phone,
+    name: row.name,
+    type: row.customer_type === "partner" ? "partner" : "regular",
+    createdAt: row.created_at,
+  };
+}
+
+export function isPartnerCustomer(customer: { type: CustomerType } | null | undefined): boolean {
+  return customer?.type === "partner";
+}
+
+/** Admin: set the customer type directly (e.g. demote a partner). */
+export function setCustomerType(id: string, type: CustomerType): void {
+  db.prepare("UPDATE customers SET customer_type = ? WHERE id = ?").run(type, id);
 }
 
 export function getCustomerByPhone(phone: string): Customer | undefined {

@@ -1,6 +1,11 @@
 import { db } from "@/server/db/client";
 import { newId } from "@/server/db/ids";
-import { getVariantById, getProductById } from "@/server/repo/products";
+import { getVariantById, getProductById, effectivePrice } from "@/server/repo/products";
+import {
+  cartWeightGrams,
+  PARTNER_MIN_WEIGHT_GRAMS,
+  PARTNER_MIN_WEIGHT_LABEL,
+} from "@/lib/partner";
 import {
   buildPaged,
   likePattern,
@@ -287,8 +292,6 @@ function generateOrderNumber(): string {
   return `MH-${stamp}-${rand}`;
 }
 
-const SHIPPING_COST = 45000;
-const FREE_SHIPPING_THRESHOLD = 1500000;
 
 export type CreateOrderInput = {
   customerId: string;
@@ -299,14 +302,28 @@ export type CreateOrderInput = {
   city: string;
   addressLine: string;
   postalCode?: string;
+  shippingCost: number;
+  partner: boolean;
 };
 
-export function createOrderFromCart(
-  input: CreateOrderInput
-): { order?: Order; error?: string } {
-  if (input.items.length === 0) return { error: "سبد خرید خالی است" };
+export type ResolvedCartItem = {
+  productId: string;
+  variantId: string;
+  productName: string;
+  weight: string;
+  grindTypeName: string | null;
+  unitPrice: number;
+  quantity: number;
+};
 
-  const resolvedItems = input.items.map((item) => {
+/** Looks up live prices/weights for cart lines; never trusts client-sent prices. */
+export function resolveCartItems(
+  cartItems: { variantId: string; quantity: number }[],
+  partner = false
+): { items?: ResolvedCartItem[]; error?: string } {
+  if (cartItems.length === 0) return { error: "سبد خرید خالی است" };
+
+  const resolved = cartItems.map((item) => {
     const variant = getVariantById(item.variantId);
     if (!variant) return null;
     const product = getProductById(variant.productId);
@@ -317,18 +334,29 @@ export function createOrderFromCart(
       productName: product.name,
       weight: variant.weight,
       grindTypeName: variant.grindTypeName,
-      unitPrice: variant.price,
-      quantity: Math.max(1, Math.min(20, item.quantity)),
+      unitPrice: effectivePrice(variant, partner),
+      quantity: Math.max(1, Math.min(20, Number(item.quantity) || 1)),
     };
   });
 
-  if (resolvedItems.some((i) => i === null)) {
+  if (resolved.some((i) => i === null)) {
     return { error: "برخی از محصولات سبد خرید دیگر موجود نیستند" };
   }
+  return { items: resolved as ResolvedCartItem[] };
+}
 
-  const items = resolvedItems as NonNullable<(typeof resolvedItems)[number]>[];
+export function createOrderFromCart(
+  input: CreateOrderInput
+): { order?: Order; error?: string } {
+  const { items, error: resolveError } = resolveCartItems(input.items, input.partner);
+  if (resolveError || !items) return { error: resolveError };
+
+  if (input.partner && cartWeightGrams(items) < PARTNER_MIN_WEIGHT_GRAMS) {
+    return { error: `حداقل خرید برای مشتریان همکار ${PARTNER_MIN_WEIGHT_LABEL} است` };
+  }
+
   const subtotal = items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
-  const shippingCost = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
+  const shippingCost = input.shippingCost;
   const total = subtotal + shippingCost;
 
   const orderId = newId("ord");

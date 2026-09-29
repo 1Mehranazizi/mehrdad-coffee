@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Plus, Trash2 } from "lucide-react";
 import { weightOptions } from "@/lib/products";
+import { toast } from "@/lib/toast-store";
 
 type Category = { id: string; title: string; requiresGrind: boolean };
 type GrindType = { id: string; title: string };
@@ -13,6 +14,7 @@ type VariantRow = {
   weight: string;
   grindTypeId: string;
   price: string;
+  partnerPrice: string;
 };
 
 type Initial = {
@@ -24,7 +26,7 @@ type Initial = {
   description: string | null;
   published: boolean;
   imageUrl: string | null;
-  variants: { weight: string; grindTypeId: string | null; price: number }[];
+  variants: { weight: string; grindTypeId: string | null; price: number; partnerPrice: number | null }[];
 };
 
 export default function ProductForm({
@@ -50,8 +52,9 @@ export default function ProductForm({
           weight: v.weight,
           grindTypeId: v.grindTypeId ?? "",
           price: String(v.price),
+          partnerPrice: v.partnerPrice != null ? String(v.partnerPrice) : "",
         }))
-      : [{ weight: weightOptions[0].value, grindTypeId: "", price: "" }]
+      : [{ weight: weightOptions[0].value, grindTypeId: "", price: "", partnerPrice: "" }]
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -64,7 +67,7 @@ export default function ProductForm({
   };
 
   const addVariant = () =>
-    setVariants((rows) => [...rows, { weight: weightOptions[0].value, grindTypeId: "", price: "" }]);
+    setVariants((rows) => [...rows, { weight: weightOptions[0].value, grindTypeId: "", price: "", partnerPrice: "" }]);
 
   const removeVariant = (index: number) =>
     setVariants((rows) => rows.filter((_, i) => i !== index));
@@ -75,6 +78,7 @@ export default function ProductForm({
 
     if (!slug || !name || !origin || !categoryId) {
       setError("لطفاً همه‌ی فیلدهای ضروری را پر کنید");
+      toast.error("لطفاً همه‌ی فیلدهای ضروری را پر کنید");
       return;
     }
     const cleanVariants = variants
@@ -83,13 +87,16 @@ export default function ProductForm({
         weight: v.weight,
         grindTypeId: requiresGrind ? v.grindTypeId || null : null,
         price: Number(v.price),
+        partnerPrice: v.partnerPrice ? Number(v.partnerPrice) : null,
       }));
     if (cleanVariants.length === 0) {
       setError("حداقل یک گزینه‌ی وزن و قیمت لازم است");
+      toast.error("حداقل یک گزینه‌ی وزن و قیمت لازم است");
       return;
     }
     if (requiresGrind && cleanVariants.some((v) => !v.grindTypeId)) {
       setError("برای این دسته‌بندی، نوع آسیاب هر گزینه باید انتخاب شود");
+      toast.error("برای این دسته‌بندی، نوع آسیاب هر گزینه باید انتخاب شود");
       return;
     }
 
@@ -112,10 +119,14 @@ export default function ProductForm({
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || "خطایی رخ داد");
+        toast.error(data.error || "خطایی رخ داد");
         return;
       }
+      toast.success(initial ? "محصول ویرایش شد" : "محصول ایجاد شد");
       router.push("/admin/products");
       router.refresh();
+    } catch {
+      toast.error("ارتباط با سرور برقرار نشد");
     } finally {
       setSaving(false);
     }
@@ -250,6 +261,15 @@ export default function ProductForm({
                 className="flex-1 rounded-xl border border-line bg-cream px-3 py-2 text-sm focus:border-coffee"
               />
 
+              <input
+                type="number"
+                placeholder="قیمت همکار"
+                title="قیمت برای مشتریان همکار (خالی = همان قیمت عادی)"
+                value={row.partnerPrice}
+                onChange={(e) => updateVariant(i, { partnerPrice: e.target.value })}
+                className="flex-1 rounded-xl border border-line bg-cream px-3 py-2 text-sm focus:border-coffee"
+              />
+
               <button
                 type="button"
                 onClick={() => removeVariant(i)}
@@ -261,6 +281,9 @@ export default function ProductForm({
             </div>
           ))}
         </div>
+        <p className="mt-2 text-xs text-ink-soft">
+          «قیمت همکار» فقط برای مشتریان همکارِ تأییدشده اعمال می‌شود؛ اگر خالی بماند، همان قیمت عادی حساب می‌شود.
+        </p>
         {requiresGrind && (
           <p className="mt-2 text-xs text-ink-soft">
             نوع‌های آسیاب رو می‌تونید از بخش «متغیرهای محصول» در منوی کناری اضافه یا ویرایش کنید.

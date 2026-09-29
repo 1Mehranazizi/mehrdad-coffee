@@ -8,6 +8,7 @@ const TABS = [
   { href: "/account", label: "پروفایل" },
   { href: "/account/addresses", label: "آدرس‌ها" },
   { href: "/account/orders", label: "سفارش‌ها" },
+  { href: "/account/partner", label: "همکاری" },
 ];
 
 export default async function AccountLayout({
@@ -26,8 +27,11 @@ export default async function AccountLayout({
             <div>
               <h1 className="text-2xl font-extrabold text-ink">حساب کاربری</h1>
               {customer && (
-                <p className="mt-1 text-sm text-ink-soft" dir="ltr">
-                  {customer.phone}
+                <p className="mt-1 text-sm text-ink-soft">
+                  <span dir="ltr">{customer.phone}</span>
+                  {customer.type === "partner" && (
+                    <span className="mr-2 rounded-full bg-coffee px-2 py-0.5 text-xs text-cream">همکار</span>
+                  )}
                 </p>
               )}
             </div>
